@@ -1,0 +1,1096 @@
+:PROPERTIES:
+:year:     2025
+:created:  2025-06-04 03:41
+:version:  0.1
+:url:      https://li-yiyang.github.io
+:keywords: Image dump
+:compability: SBCL
+:END:
+#+title: [func2exec]: Turn your lisp function to executable
+#+author: 凉凉
+* About
+So there's a lot of command line arguments parsing libraries for
+Common Lisp... But what if I just want to make an executable as
+fast as I can?
+
+So you may give this project (func2exec) a try:
+
+#+name: f2e-example
+#+header: :eval no
+#+begin_src lisp
+  (func2exec:f2e 'a-function-you-want-to-call)
+#+end_src
+
+That should be all you need to save lisp image as a stand alone
+executable (named as =a-function-you-want-to-call= by default).
+
+*Note*: Only support SBCL now.
+
+** Usage
+#+name: f2e-syntax
+#+header: :eval no
+#+begin_src lisp
+  (func2exec:f2e function
+                 &key executable compression documentation
+                 parse-hint flag-nicknames
+                 external depends-on loads)
+#+end_src
+
+*** Basic executable arguments
++ =executable=: path to output executable file
++ =compression=: non =nil= for compress the output executable (SBCL)
++ =documentation=: documentation string
+
+  if not provided, the documentation will be evaluated by
+  [[function-docstring][=func2exec::function-docstring=]].
+
+*** Argument parsing rules
++ =parse-hint=: an alist for function lambda list type hints
+
+  The alist element should be like =(var . type)=:
+  + =var=: should be the variable name lambda list
+  + =type=: should be one of: <<rule.parse-hint.type>>
+
+    + =:stdin=:  as the =*standard-input*= (only one)
+
+      #+begin_src sh :eval no
+        cat hello | func # (stream . :stdin) ;; => (func *standard-input*)
+      #+end_src
+    + =:stdin*=: read =*standard-input*= as string (only one)
+
+      #+begin_src sh :eval no
+        cat hello | length # (sequence . :stdin*) => (length "hello") ;; => 5
+      #+end_src
+
+    + =:read=:   read as lisp expression (literally)
+
+      #+begin_src sh :eval no
+        length "(1 2 3)" # (sequence . :read) => (length '(1 2 3)) ;; => 3
+      #+end_src
+    + =:eval=:   read and evaluate the lisp expression
+
+      #+begin_src sh :eval no
+        length "(list 1 2 3)" # (sequence . :eval) => (length (list 1 2 3)) ;; => 3
+      #+end_src
+    + =:plain=:  just read as string
+
+      #+begin_src sh :eval no
+        length "(1 2 3)" # (sequence . :plain) => (length "(1 2 3)") ;; => 7
+      #+end_src
+    + =:flag=:   if not given, it's value would be =nil=, otherwise, =t= (key only)
+
+      #+begin_src sh :eval no
+        func --flag # (func :flag t)
+        func        # (func :flag nil)
+      #+end_src
+
+    See [[read-arg][=func2exec::read-arg=]] for reading type implementation.
+
+    See [[*default-parse-hint*][=*default-parse-hint*=]] for default parse type hint.
+
+  See [[parse-argv][=func2exec:parse-argv=]].
++ =flag-nicknames=: an alist of function flag nicknames
+
+*** Build using external SBCL process (experimental)
++ =external=: non =nil= means to build executable using external SBCL process
+  (this will not quit current Lisp process)
++ =depends-on=: a list of package names that current =function= depends on
++ =loads=: a list of scripts the =function= should be loaded
+
+  When loading the scripts, will switch to the scripts directory.
+  So this will ensure that script will have correct relative path.
+
+* Implementation
+** ASDF
+:PROPERTIES:
+:header-args:lisp: :tangle func2exec.asd :noweb yes
+:END:
+
+#+name: func2exec-asdf-header
+#+begin_src lisp :exports none
+  <<header(file="func2exec.asd", desc="ASDF definition of func2exec. ")>>
+#+end_src
+
+#+name: func2exec-asdf
+#+begin_src lisp
+  (asdf:defsystem #:func2exec
+    :author ("凉凉")
+    :version "<<property(p="version")>>"
+    :description "Turn function to executable. "
+    :depends-on (:SB-INTROSPECT)
+    :serial t
+    :components
+    ((:file "func2exec")))
+#+end_src
+
+#+name: func2exec-asdf-ending
+#+begin_src lisp :exports none
+  <<ending(file="func2exec.asd")>>
+#+end_src
+
+** Package
+:PROPERTIES:
+:header-args:lisp: :tangle func2exec.lisp :noweb yes :noweb-prefix no  :package func2exec :results silent
+:END:
+
+#+name: defpackage-func2exec
+#+begin_src lisp :tangle no
+  (defpackage #:func2exec
+    (:use :cl)
+    (:export
+     ;; Configure
+     #:*executable*
+     #:*dynamic-space-size*
+     #:*control-stack-size*
+     #:*parse-hint*
+     #:*default-parse-hint*
+     #:*flag-nicknames*
+     #:*help-flags*
+
+     #:f2e
+     #:func2exec))
+
+  (in-package :func2exec)
+#+end_src
+
+*** Header                                                         :noexport:
+#+name: func2exec-header
+#+begin_src lisp :exports none
+  <<header(file="func2exec.lisp", desc="Function -> Executable. ")>>
+
+  <<defpackage-func2exec>>
+#+end_src
+
+*** Configure
+These values are used to configure how to generate the executable:
+
++ =*executable*=: default executable output name (fallback)
+
+  #+name: *executable*
+  #+begin_src lisp
+    (defparameter *executable* "executable"
+      "Default `func2exec' executable name fallback. ")
+  #+end_src
+
++ =*dynamic-space-size*=
+
+  #+name: *dynamic-space-size*
+  #+begin_src lisp
+    (defparameter *dynamic-space-size* nil
+      "Runtime option --dynamic-space-size for external SBCL.
+    Set to be `nil' will use current image runtime option. ")
+  #+end_src
+
++ =*control-stack-size*=
+
+  #+name: *control-stack-size*
+  #+begin_src lisp
+    (defparameter *control-stack-size* nil
+      "Runtime option --control-stack-size for external SBCL.
+    Set to be `nil' will use current image runtime option. ")
+  #+end_src
+
++ =*flag-nicknames*=: predefined flag nicknames
+
+  #+name: *flag-nicknames*
+  #+begin_src lisp
+    (defparameter *flag-nicknames* '((:h . :help))
+      "Flag nicknames as fallback. ")
+  #+end_src
+
++ =*parse-hint*=: predefined parse hints
+
+  #+name: *parse-hint*
+  #+begin_src lisp
+    (defparameter *parse-hint* '((:help . :flag))
+      "Parse hint fallbacks. ")
+  #+end_src
+
++ =*default-parse-hint*=: default parse hint option
+
+  #+name: *default-parse-hint*
+  #+begin_src lisp
+    (defparameter *default-parse-hint* :read
+      "Default parse hint type. ")
+  #+end_src
+
++ =*help-flags*=: a list of help flags
+
+  #+name: *help-flags*
+  #+begin_src lisp
+    (defparameter *help-flags* '(:help)
+      "A list of keys that will be used to print help message.  ")
+  #+end_src
+
+*** Utils
+These utils function
+
+**** =(function-lambda-list function)= \rightarrow lambda list of =function=
+#+name: function-lambda-list
+#+begin_src lisp
+  ,#+sbcl
+  (require :sb-introspect)
+
+  (defun function-lambda-list (function)
+    "Return `function' lambda list. "
+    ,#+sbcl (sb-introspect:function-lambda-list function))
+#+end_src
+
+**** =(command-line-arguments)= \rightarrow a list of command line arguments (ARGV)
+#+name: command-line-arguments
+#+begin_src lisp
+  (defun command-line-arguments ()
+    ,#+sbcl (rest sb-ext:*posix-argv*))
+#+end_src
+
+The command line arguments should strip the first argument,
+the name of executable file.
+
+**** =(lisp-runtime-arguments)= \rightarrow a list of lisp runtime arguments
+#+name: lisp-runtime-arguments
+#+begin_src lisp
+  (defun lisp-runtime-arguments ()
+    ,#+sbcl
+    (list "--dynamic-space-size"
+          (format nil "~d"
+                  (or *dynamic-space-size*
+                      (/ (sb-ext:dynamic-space-size)
+                         1024 1024)))
+          "--control-stack-size"
+          (format nil "~d"
+                  (or *control-stack-size*
+                      (/ (- sb-vm:*control-stack-end*
+                            sb-vm:*control-stack-start*)
+                         1024 1024)))
+          "--non-interactive"))
+#+end_src
+
+The runtime arguments should extracted from current Lisp image.
+
+**** =(symbol->keyword symbol)= \rightarrow keyword of symbol
+#+name: symbol-to-keyword
+#+begin_src lisp
+  (defun symbol->keyword (symbol)
+    (declare (type symbol symbol))
+    (intern (symbol-name symbol) :keyword))
+#+end_src
+
+**** =(normalize-parse-hint parse-hint)= \rightarrow normalized parse hint alist
+A normailzed =parse-hint= alist is an alist with elements:
++ =var=: name as keyword \leftarrow =symbol=, =keyword=, =string=
++ =type=: keyword as valid =parse-hint= [[rule.parse-hint.type][rule]] ! error if not
+
+#+name: normalize-parse-hint
+#+begin_src lisp
+  (defun normalize-parse-hint (parse-hint)
+    (loop for (var* . type) in parse-hint
+          for var = (etypecase var*
+                      (keyword var*)
+                      (symbol  (symbol->keyword var*))
+                      (string  (intern (string-upcase var*) :keyword)))
+          do (assert (member type '(:stdin :stdin* :read :eval :plain :flag)))
+          collect (cons var type)))
+#+end_src
+
+*Test*:
+
+#+name: normalize-parse-hint.test
+#+call: test[:results replace](e='(normalize-parse-hint '((:foo . :read) ("bar" . :flag))))
+
+#+RESULTS: normalize-parse-hint.test
+#+begin_src lisp :tangle no :eval no
+(normalize-parse-hint '((:foo . :read) ("bar" . :flag)))
+;; => ((:foo . :read) (:bar . :flag))
+#+end_src
+
+**** =(parse-lambda-list lambda-list parse-hint)= \rightarrow normal, optional, key, rest-p, other-keys-p
+#+name: parse-lambda-list
+#+begin_src lisp
+  (defun parse-lambda-list (lambda-list &optional parse-hint)
+    "Parse `lambda-list' with `parse-hint' annotated.
+  Return values are normal, optional, key, rest-p, other-keys-p.
+
+  Parameters:
+  + `lambda-list': should having the syntax
+
+        <lambda-list> ::= <normal>*
+                          (&optional <option>*)?
+                          (&key <key>* &allow-other-keys?)?
+
+  + `parse-hint': the alist of variable type hint
+    See `func2exec:func2exec'.
+  "
+    (loop with stat         = :normal
+          with skip         = nil
+          with rest-p       = nil
+          with other-keys-p = nil
+          with parse-hint   = (normalize-parse-hint
+                               (append parse-hint *parse-hint*))
+
+          for var* in lambda-list
+          for sym  = (if (listp var*) (first var*) var*)
+          for var  = (symbol->keyword sym)
+          for type = (or (cdr (assoc var parse-hint))
+                         ,*default-parse-hint*)
+
+          do (cond ((eq sym '&optional)
+                    (setf skip :optional
+                          stat nil))
+                   ((eq sym '&key)
+                    (setf skip :key
+                          stat nil))
+                   ((eq sym '&rest)
+                    (setf skip   :rest
+                          stat   nil
+                          rest-p t))
+                   ((eq sym '&allow-other-keys)
+                    (setf stat         nil
+                          skip         nil
+                          other-keys-p t)))
+
+          if (eq stat :normal)
+            collect (cons var type) into normal
+          if (eq stat :optional)
+            collect (cons var type) into optional
+          if (eq stat :key)
+            collect (cons var type) into key
+
+          if skip
+            do (shiftf stat skip nil)
+
+          finally (return (values normal optional key rest-p other-keys-p))))
+#+end_src
+
+*Test*:
+
+***** Basic
+#+name: parse-lambda-list.test
+#+call: test[:results replace](e='(parse-lambda-list (function-lambda-list #'parse-lambda-list)))
+
+#+RESULTS: parse-lambda-list.test
+#+begin_src lisp :tangle no :eval no
+(parse-lambda-list (function-lambda-list #'parse-lambda-list))
+;; => ((:lambda-list . :read)), ((:parse-hint . :read)), nil, nil, nil
+#+end_src
+
+***** Parse hint
+With =parse-hint= for normal arguments:
+
+#+name: parse-lambda-list.test.with-parse-hint
+#+call: test[:results replace](e='(parse-lambda-list (function-lambda-list #'parse-lambda-list) '((lambda-list . :plain))))
+
+#+RESULTS: parse-lambda-list.test.with-parse-hint
+#+begin_src lisp :tangle no :eval no
+(parse-lambda-list (function-lambda-list #'parse-lambda-list)
+                   '((lambda-list . :plain)))
+;; => ((:lambda-list . :plain)), ((:parse-hint . :read)), nil, nil, nil
+#+end_src
+
+With =parse-hint= for key arguments:
+
+#+name: parse-lambda-list.test.with-parse-hint-key
+#+call: test[:results replace](e='(parse-lambda-list '(x &key y z) '((y . :flag))))
+
+#+RESULTS: parse-lambda-list.test.with-parse-hint-key
+#+begin_src lisp :tangle no :eval no
+(parse-lambda-list '(x &key y z) '((y . :flag)))
+;; => ((:x . :read)), nil, ((:y . :flag) (:z . :read)), nil, nil
+#+end_src
+
+***** Complex
+With =&key= and =&allow-other-keys=:
+
+#+name: parse-lambda-list.test.with-key-allow-other-keys
+#+call: test[:results replace](e='(parse-lambda-list '(x &rest args &key y &allow-other-keys)))
+
+#+RESULTS: parse-lambda-list.test.with-key-allow-other-keys
+#+begin_src lisp :tangle no :eval no
+(parse-lambda-list '(x &rest args &key y &allow-other-keys))
+;; => ((:x . :read)), nil, ((:y . :read)), t, t
+#+end_src
+
+Complex lambda list:
+
+#+name: parse-lambda-list.test.complex
+#+call: test[:results replace](e='(parse-lambda-list '(x &rest y &key z &allow-other-keys)))
+
+#+RESULTS: parse-lambda-list.test.complex
+#+begin_src lisp :tangle no :eval no
+(parse-lambda-list '(x &rest y &key z &allow-other-keys))
+;; => ((:x . :read)), nil, ((:z . :read)), t, t
+#+end_src
+
+**** =(function-docstring function exec &optional parse-hint)= \rightarrow documentation string of =function=
+This should generate a docstring for =--help= key print out.
+1. the [[(docstr.first)][first line]] should be the executable name, args input
+2. then [[(docstr.rest)][the rest]] should list all arguments and how they are parsed
+3. [[(docstr.last)][the last]] of docstring should be the lisp function documentation string
+
+#+name: function-docstring
+#+begin_src lisp
+  (defun function-docstring (function exec &key parse-hint)
+    "Return the documentation string of `function'"
+    (with-output-to-string (*standard-output*)
+      (multiple-value-bind (normal optional keys rest-p other-key-p)
+          (parse-lambda-list (function-lambda-list function) parse-hint)
+
+        ;; exec args [optional args] { --key ... } (ref:docstr.first)
+        (format t "~A ~{~A~^ ~}" exec (mapcar #'car normal))
+        (when optional (format t " [~{~A~^ ~}]" (mapcar #'car optional)))
+        (when rest-p (format t " ... "))
+        (when keys   (format t " { --key ... }"))
+        (format t "~%~%")
+
+        ;; list of keys                            (ref:docstr.rest)
+        (let ((lines ())
+              (types ()))
+          (loop for (var . type) in normal
+                do (push (format nil "  ~A" var)         lines)
+                do (push (format nil " [~:@(~A~)]" type) types))
+          (when optional
+            (push "  &optional" lines)
+            (push ""            types)
+            (loop for (var . type) in optional
+                  do (push (format nil "  ~A" var)         lines)
+                  do (push (format nil " [~:@(~A~)]" type) types)))
+          (loop for (var . type) in keys
+                do (push (format nil "  --~A"      var)  lines)
+                do (push (format nil " [~:@(~A~)]" type) types))
+          (when lines
+            (let ((max (reduce #'max (mapcar #'length lines))))
+              (loop for line in (reverse lines)
+                    for type in (reverse types)
+                    do (format t "~vA ~A~%" (1+ max) line type))))
+          (when other-key-p
+            (format t "  ... allow other keys~%"))
+
+          ;; Lisp function docstrings                (ref:docstr.last)
+          (format t "~&~%~A~&" (or (documentation function 'function) ""))))))
+#+end_src
+
+*Test*:
+
+**** Basic
+#+name: function-docstring.test
+#+call: test[:results replace](e='(function-docstring #'function-docstring "function-docstring"))
+
+#+RESULTS: function-docstring.test
+#+begin_src lisp :tangle no :eval no
+(function-docstring #'function-docstring "function-docstring")
+;; => "function-docstring function exec { --key ... }
+;;
+;;   function       [READ]
+;;   exec           [READ]
+;;   --parse-hint   [READ]
+;;
+;; Return the documentation string of `function'
+;; "
+#+end_src
+
+Return empty string for function with no docstring:
+
+#+name: function-docstring.test.nodocstring
+#+call: test[:results replace](e='(function-docstring (lambda ()) "nodoc"))
+
+#+RESULTS: function-docstring.test.nodocstring
+#+begin_src lisp :tangle no :eval no
+(function-docstring (lambda ()) "nodoc")
+;; => "nodoc
+;;
+;;
+;; "
+#+end_src
+
+**** Parsed hint
+#+name: function-docstring.test.parsed-hint
+#+call: test[:results replace](e='(function-docstring (lambda (&key foo bar) (declare (ignore foo bar))) "key" :parse-hint '((:foo . :flag))))
+
+#+RESULTS: function-docstring.test.parsed-hint
+#+begin_src lisp :tangle no :eval no
+(function-docstring (lambda (&key foo bar) (declare (ignore foo bar))) "key"
+                    :parse-hint '((:foo . :flag)))
+;; => "key  { --key ... }
+;;
+;;   --foo   [FLAG]
+;;   --bar   [READ]
+;;
+;; "
+#+end_src
+
+**** Complex
+#+name: function-docstring.test.complex
+#+call: test[:results replace](e='(function-docstring #'parse-argv "complex" :parse-hint '((:lambda-list . :eval))))
+
+#+RESULTS: function-docstring.test.complex
+#+begin_src lisp :tangle no :eval no
+(function-docstring #'parse-argv "complex"
+                    :parse-hint '((:lambda-list . :eval)))
+;; => "complex lambda-list argv { --key ... }
+;;
+;;   lambda-list            [EVAL]
+;;   argv                   [READ]
+;;   --parse-hint           [READ]
+;;   --flag-nicknames       [READ]
+;;   --default-parse-hint   [READ]
+;;
+;; Parse ARGV and return the calling form.
+;; "
+#+end_src
+
+*** ARGV \rightarrow Function calling arguments: =parse-argv=
+Parse the =(command-line-arguments)=.
+
+**** =(key-arg-p arg)= \rightarrow test if arg is =--key= like arguments
+#+name: key-arg-p
+#+begin_src lisp
+  (defun key-arg-p (arg)
+    (and (> (length arg) 2)
+         (char= (aref arg 0) #\-)
+         (char= (aref arg 1) #\-)))
+#+end_src
+
+*Test*:
+
+#+name: key-arg-p.test
+#+call: test[:results replace](e='(key-arg-p "--key"))
+
+#+RESULTS: key-arg-p.test
+#+begin_src lisp :tangle no :eval no
+(key-arg-p "--key")
+;; => t
+#+end_src
+
+**** =(read-arg type arg)= \rightarrow return the argument parsed from =type=
+#+name: read-arg
+#+begin_src lisp
+  (defun read-arg (type arg)
+    (declare (type (member :stdin :stdin* :read :eval :plain :flag) type))
+    (ecase type
+      (:stdin  *standard-input*)
+      (:stdin* (with-output-to-string (in)
+                 (loop for line = (read-line *standard-input* nil nil)
+                       while line
+                       do (write-line line in))))
+      (:read   (read-from-string arg))
+      (:eval   (eval (read-from-string arg)))
+      (:plain  arg)
+      (:flag   t)))
+#+end_src
+
+*Test*:
+
+The =:stdin*= should read =*standard-input*= as string and use it.
+
+#+name: read-arg.test.stdin
+#+call: test[:results replace](e='(with-input-from-string (*standard-input* "foo") (read-arg :stdin* nil)))
+
+#+RESULTS: read-arg.test.stdin
+#+begin_src lisp :tangle no :eval no
+(with-input-from-string (*standard-input* "foo") (read-arg :stdin* nil))
+;; => "foo
+;; "
+#+end_src
+
+**** =(parse-argv lambda-list argv &key parse-hint flag-nicknames)= \rightarrow funcall argument list
+#+name: parse-argv
+#+begin_src lisp
+  (defun parse-argv (lambda-list argv
+                     &key parse-hint flag-nicknames
+                       (default-parse-hint *default-parse-hint*))
+    "Parse ARGV and return the calling form. "
+    (multiple-value-bind (normal optional keys rest-p other-key-p)
+        (parse-lambda-list lambda-list parse-hint)
+      (let ((*default-parse-hint* default-parse-hint)
+            (flag-nicknames       (append flag-nicknames *flag-nicknames*)))
+        (loop with key*    = ()
+              with normal* = ()
+              with help?   = nil
+
+              while (not (endp argv))
+
+              do (let ((arg (pop argv)))
+                   (if (key-arg-p arg)
+                       ;; Parse keys
+                       (let* ((key  (symbol->keyword
+                                     (read-from-string arg t nil :start 2)))
+                              (key  (or (cdr (assoc key flag-nicknames)) key))
+                              (help (find key *help-flags*))
+                              (type (or (cdr (assoc key keys))
+                                        (and other-key-p default-parse-hint)
+                                        help
+                                        (error "Unknown key ~S" key)))
+                              (arg  (read-arg (if help :flag type)
+                                              (unless (or (eq type :flag) help)
+                                                (pop argv)))))
+                         (when help (setf help? t))
+                         (push arg key*)
+                         (push key key*))
+                       ;; Parse normal and optional arguments
+                       (let* ((type (if (endp normal)
+                                        (if (endp optional)
+                                            (if rest-p
+                                                :plain
+                                                (error "Too many input arguments. "))
+                                            (cdr (pop optional)))
+                                        (cdr (pop normal)))))
+                         (push (read-arg type arg) normal*))))
+
+              finally (progn
+                        (unless (or (endp normal) help?)
+                          (error "Too few input arguments. "))
+                        (return (values (nconc (nreverse normal*) key*))))))))
+#+end_src
+
+*TODO*: Make it more neat
+
+*Test*:
+
+***** Basic
+#+name: parse-argv.test
+#+call: test[:results replace](e='(parse-argv '(x y) '("x" "y") :parse-hint '((y . :plain))))
+
+#+RESULTS: parse-argv.test
+#+begin_src lisp :tangle no :eval no
+(parse-argv '(x y) '("x" "y") :parse-hint '((y . :plain)))
+;; => (x "y")
+#+end_src
+
+***** Help flag
+#+name: parse-argv.test.help
+#+call: test[:results replace](e='(parse-argv '(x y) '("--help")))
+
+#+RESULTS: parse-argv.test.help
+#+begin_src lisp :tangle no :eval no
+(parse-argv '(x y) '("--help"))
+;; => (:help t)
+#+end_src
+
+#+name: parse-argv.test.help2
+#+call: test[:results replace](e='(parse-argv '(x y) '("--h")))
+
+#+RESULTS: parse-argv.test.help2
+#+begin_src lisp :tangle no :eval no
+(parse-argv '(x y) '("--h"))
+;; => (:help t)
+#+end_src
+
+***** Arguments number test
+Will raise error if given too few arguments:
+
+#+name: parse-argv.test.too-few-arg
+#+call: test[:results replace](e='(parse-argv '(x y) '("x")))
+
+#+RESULTS: parse-argv.test.too-few-arg
+#+begin_src lisp :tangle no :eval no
+(parse-argv '(x y) '("x"))
+;; => Error: Too few input arguments.
+#+end_src
+
+Will raise error if given too many arguments:
+
+#+name: parse-argv.test.too-many-arg
+#+call: test[:results replace](e='(parse-argv '(x y) '("x" "y" "z")))
+
+#+RESULTS: parse-argv.test.too-many-arg
+#+begin_src lisp :tangle no :eval no
+(parse-argv '(x y) '("x" "y" "z"))
+;; => Error: Too many input arguments.
+#+end_src
+
+Will accept any number arguments if =&rest=:
+
+#+name: parse-argv.test.rest-arg
+#+call: test[:results replace](e='(parse-argv '(x y &rest more) '("x" "y" "z")))
+
+#+RESULTS: parse-argv.test.rest-arg
+#+begin_src lisp :tangle no :eval no
+(parse-argv '(x y &rest more) '("x" "y" "z"))
+;; => (x y "z")
+#+end_src
+
+Will raise error when given unknown arguments with fixed keys:
+
+#+name: parse-argv.test.unknown-key
+#+call: test[:results replace](e='(parse-argv '(&key x y) '("--y" "foo" "--z" "bar")))
+
+#+RESULTS: parse-argv.test.unknown-key
+#+begin_src lisp :tangle no :eval no
+(parse-argv '(&key x y) '("--y" "foo" "--z" "bar"))
+;; => Error: Unknown key :z
+#+end_src
+
+Will accept any keys if =&allow-other-keys=:
+
+#+name: parse-argv.test.allow-other-keys
+#+call: test[:results replace](e='(parse-argv '(&key x y &allow-other-keys) '("--y" "foo" "--z" "bar")))
+
+#+RESULTS: parse-argv.test.allow-other-keys
+#+begin_src lisp :tangle no :eval no
+(parse-argv '(&key x y &allow-other-keys) '("--y" "foo" "--z" "bar"))
+;; => (:z "bar" :y "foo")
+#+end_src
+
+Will accept key nicknames:
+
+#+name: parse-argv.test.nickname
+#+call: test[:results replace](e='(parse-argv '(&key x) '("--xxx" "foo") :flag-nicknames '((:xxx . :x))))
+
+#+RESULTS: parse-argv.test.nickname
+#+begin_src lisp :tangle no :eval no
+(parse-argv '(&key x) '("--xxx" "foo") :flag-nicknames '((:xxx . :x)))
+;; => (:x "foo")
+#+end_src
+
+*** Function \rightarrow Executable: =func2exec=
+**** =(func2exec-here executable function ...)=
+Call =save-lisp-and-die= in local SBCL image:
+
+#+name: func2exec-here
+#+begin_src lisp
+  (defun func2exec-here (executable function
+                         &key parse-hint flag-nicknames compression result)
+    (let* ((lambda-list (function-lambda-list function))
+           (exec        (file-namestring executable))
+           (document    (function-docstring function exec
+                                            :parse-hint parse-hint))
+           (print-fn    (ecase result
+                          (:none   (lambda (res) (declare (ignore res))))
+                          (:plain  #'print)
+                          (:pretty #'pprint)))
+           (toplevel    (lambda ()
+                          (let ((args (parse-argv lambda-list
+                                                  (command-line-arguments)
+                                                  :parse-hint     parse-hint
+                                                  :flag-nicknames flag-nicknames)))
+                            (if (find :help args)
+                                (write-string document)
+                                (funcall print-fn (apply function args)))))))
+      ,#+sbcl
+      (sb-ext:save-lisp-and-die executable
+                                :toplevel             toplevel
+                                :compression          compression
+                                :executable           t
+                                :save-runtime-options t)))
+#+end_src
+
+**** =(func2exec-external executable function ...)= \rightarrow executable
+Call =save-lisp-and-die= in external SBCL image:
+
+#+name: func2exec-external
+#+begin_src lisp
+  (defun func2exec-external (executable function
+                             &key parse-hint flag-nicknames compression result
+                               depends-on loads no-evaluate)
+    (unless (symbolp function)
+      (error "Building externally should provide function as symbol. "))
+    (let* ((*print-pretty* nil)
+           (cmd
+             `("sbcl"
+               ,@(lisp-runtime-arguments)
+               "--eval" "(ql:quickload :func2exec)"
+               ,@(when depends-on
+                   (list "--eval" (format nil "(ql:quickload '~S)" depends-on)))
+               ,@(loop for load in loads
+                       for path = (truename load)
+                       for dir  = (format nil "/~{~A~^/~}/"
+                                          (cdr (pathname-directory path)))
+                       for src  = (file-namestring path)
+                       collect "--eval"
+                       collect (format nil
+                                       "(uiop:with-current-directory (~S) (load ~S))"
+                                       dir src))
+               "--eval"
+               ,(format nil
+                        (concatenate 'string
+                                     "(let ((func2exec:*default-parse-hint* '~S)) "
+                                     "(func2exec::func2exec-here "
+                                     "~S #'~A::~A "
+                                     ":parse-hint '~S "
+                                     ":flag-nicknames '~S "
+                                     ":compression '~S "
+                                     ":result '~S))")
+                        ,*default-parse-hint* executable
+                        (package-name (symbol-package function))
+                        (symbol-name function)
+                        parse-hint flag-nicknames compression result))))
+      (if no-evaluate
+          cmd
+          (uiop:run-program cmd :ignore-error-status t
+                                :output              t
+                                :error-output        t))))
+#+end_src
+
+*Test*:
+
+#+name: func2exec-external.test
+#+call: test[:results replace](e='(func2exec-external "foo" 'func2exec :no-evaluate t))
+
+#+RESULTS: func2exec-external.test
+#+begin_src lisp :tangle no :eval no
+(func2exec-external "foo" 'func2exec :no-evaluate t)
+;; => ("sbcl" "--dynamic-space-size" "20480" "--control-stack-size" "12"
+;;     "--non-interactive" "--eval" "(ql:quickload :func2exec)" "--eval"
+;;     "(func2exec-here \"foo\" #'FUNC2EXEC::FUNC2EXEC :parse-hint 'nil :flag-nicknames 'nil :compression 'nil :result 'nil)")
+#+end_src
+
+The given =function= argument should be symbol, otherwise, raise error.
+
+#+name: func2exec-external.test.sym-function
+#+call: test[:results replace](e='(func2exec-external "foo" #'func2exec :no-evaluate t))
+
+#+RESULTS: func2exec-external.test.sym-function
+#+begin_src lisp :tangle no :eval no
+(func2exec-external "foo" #'func2exec :no-evaluate t)
+;; => Error: Building externally should provide function as symbol.
+#+end_src
+
+**** =(func2exec function &key ...)=
+#+name: func2exec
+#+begin_src lisp
+  (defun func2exec (function &key (executable (if (symbolp function)
+                                                  (format nil "~A" function)
+                                                  ,*executable*))
+                               (no-compression nil)
+                               (result :none)
+                               (default-parse-hint *default-parse-hint*)
+                               parse-hint
+                               flag-nicknames
+                               external
+                               depends-on
+                               loads)
+    "Turn lisp `function' into `executable'.
+  Return the path to executable.
+
+  Parameters:
+  + `function': a symbol for function or function itself
+  + `executable': name to output executale file
+  + `compression': non `nil' to compress the output executable (SBCL)
+  + `documentation': documentation string of `function'
+
+    if not provided, the documentation will be evaluated by
+    `function-docstring'.
+  + `result': how to output (serialize) function return values
+
+    the `result' could be:
+    + `:none'   for not output result
+    + `:plain'  just print the result
+    + `:pretty' pretty print the result
+  + `parse-hint': an alist
+  + `flag-nicknames': an alist
+  + `external': non-nil for using external SBCL to build executable
+  + `depends-on': system dependence
+  + `loads': loading scripts
+  "
+    (declare (type (or symbol function) function))
+    (let ((*default-parse-hint* default-parse-hint))
+      (if external
+          (func2exec-external executable function
+                              :parse-hint parse-hint
+                              :flag-nicknames flag-nicknames
+                              :compression    (not no-compression)
+                              :result         (or result :none)
+                              :depends-on     depends-on
+                              :loads          loads)
+          (func2exec-here executable function
+                          :parse-hint     parse-hint
+                          :flag-nicknames flag-nicknames
+                          :compression    (not no-compression)
+                          :result         (or result :none)))))
+#+end_src
+
+**** =(f2e function ...)= \Leftrightarrow =func2exec=
+=f2e= is the alias of =func2exec=.
+
+#+name: f2e
+#+begin_src lisp
+  (setf (fdefinition 'f2e) #'func2exec)
+#+end_src
+
+*** Ending                                                         :noexport:
+#+name: func2exec-ending
+#+begin_src lisp :exports none
+  <<ending(file="func2exec.lisp")>>
+#+end_src
+
+* [Test] The Stand Alone =f2e= executable
+#+name: f2e.test
+#+header: :mkdirp yes :dir (expand-file-name "build/")
+#+header: :package func2exec :results output :exports both
+#+begin_src lisp
+  (f2e 'f2e :parse-hint '((executable     . :plain)
+                          (no-compression . :flag)
+                          (external       . :flag))
+            ;; :default-parse-hint :read
+            ;; :executable  "f2e"
+            :external    t)
+#+end_src
+
+#+RESULTS: f2e.test
+#+begin_example
+This is SBCL 2.5.4, an implementation of ANSI Common Lisp.
+More information about SBCL is available at <http://www.sbcl.org/>.
+
+SBCL is free software, provided as is, with absolutely no warranty.
+It is mostly in the public domain; some portions are provided under
+BSD-style licenses.  See the CREDITS and COPYING files in the
+distribution for more information.
+To load "func2exec":
+  Load 1 ASDF system:
+    func2exec
+; Loading "func2exec"
+
+[undoing binding stack and other enclosing state... done]
+[performing final GC... done]
+[saving current Lisp image into f2e:
+writing 2368 bytes from the static space at 0x300200000
+compressed 65536 bytes into 650 at level 9
+writing 0 bytes from the fixedobj space at 0x302300000
+compressed 0 bytes into 9 at level 9
+writing 40304640 bytes from the dynamic space at 0x7003000000
+compressed 40304640 bytes into 10535621 at level 9
+writing 3744 bytes from the read-only space at 0x300000000
+compressed 65536 bytes into 1375 at level 9
+writing 0 bytes from the text space at 0x0
+compressed 0 bytes into 9 at level 9
+done]
+#+end_example
+
+* License
+#+name: license
+#+begin_example
+  this package is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published
+  by the Free Software Foundation, either version 3 of the License,
+  or (at your option) any later version.
+
+  this package is distributed in the hope that it will be useful, but
+  WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+  General Public License for more details.
+
+  You should have received a copy of the GNU General Public License
+  along with this package. If not, see <https://www.gnu.org/licenses/>.
+#+end_example
+
+* Literal Programming                                              :noexport:
+** Property
+#+name: property
+#+header: :var p="version"
+#+header: :cache yes
+#+begin_src emacs-lisp
+  (or (car (org-property-values p)) "")
+#+end_src
+
+** Header and Ending
+*** Header
+#+name: header
+#+header: :var file="src.lisp" desc="A function"
+#+header: :var year=property(p="year")
+#+header: :var created=property(p="created")
+#+header: :var version=property(p="version")
+#+header: :var url=property(p="url")
+#+header: :var keywords=property(p="keywords")
+#+header: :var compatibility=property(p="compatibility")
+#+header: :var year-now=(format-time-string "%Y")
+#+header: :var update=(format-time-string "%Y-%m-%d %H:%M")
+#+header: :var license=license
+#+header: :cache yes
+#+begin_src emacs-lisp
+  (concat (format ";;; %s --- %s\n\n" file desc)
+          (format ";; File:        %s\n" file)
+          (format ";; Description: %s\n" desc)
+                  ";; Author:      凉凉\n"
+                  ";; Maintainer:  凉凉\n"
+          (format ";; Copyright (c) %s, 凉凉, all rights reserved\n"
+                  (if (string= year year-now)
+                      (format "%s" year)
+                    (format "%s-%s" year year-now)))
+          (format ";; Created: %s\n" created)
+          (format ";; Version: %s\n" version)
+          (format ";; Last-Updated: %s\n" update)
+                  ";;           By: 凉凉\n"
+          (format ";; URL: %s\n" url)
+          (format ";; Keywords: %s\n" keywords)
+          (format ";; Compatibility: %s\n" compatibility)
+                  ";; \n"
+                  ";; \n\n"
+                  ";;; License\n"
+                  ";; \n"
+          (string-join
+           (mapcar (lambda (line) (format ";; %s" line))
+                   (split-string license "\n"))
+           "\n"))
+#+end_src
+
+#+RESULTS[0476dd2dfe8adc9e29af10b462024aa4629a7752]: header
+#+begin_example
+;;; src.lisp --- A function
+
+;; File:        src.lisp
+;; Description: A function
+;; Author:      凉凉
+;; Maintainer:  凉凉
+;; Copyright (c) 2025, 凉凉, all rights reserved
+;; Created: 2025-06-04 03:41
+;; Version: 0.1
+;; Last-Updated: 2025-06-04 05:29
+;;           By: 凉凉
+;; URL: https://li-yiyang.github.io
+;; Keywords:
+;; Compatibility:
+;;
+;;
+
+;;; License
+;;
+;; this package is free software: you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published
+;; by the Free Software Foundation, either version 3 of the License,
+;; or (at your option) any later version.
+;;
+;; this package is distributed in the hope that it will be useful, but
+;; WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+;; General Public License for more details.
+;;
+;; You should have received a copy of the GNU General Public License
+;; along with this package. If not, see <https://www.gnu.org/licenses/>.
+;;
+#+end_example
+
+*** Ending
+#+name: ending
+#+header: :var file="src.lisp"
+#+begin_src emacs-lisp
+  (format ";;; %s ends here" file)
+#+end_src
+
+#+RESULTS: ending
+: ;;; src.lisp ends here
+
+** Testing
+This requires [[https://github.com/hyotang666/trivial-formatter][trivial-formatter]] package.
+
+#+name: test
+#+header: :var e='(+ 1 2)
+#+header: :results output
+#+header: :wrap "src lisp :tangle no :eval no"
+#+begin_src lisp
+  (trivial-formatter:print-as-code e)
+  (format t "~&")
+  (let ((lines (str:lines
+                (with-output-to-string (out)
+                  (handler-case
+                      (format out "=> ~{~S~^, ~}~%"
+                              (multiple-value-list (eval e)))
+                    (error (err)
+                      (format out "=> Error: ~A~%" err)))))))
+    (dolist (line lines)
+      (format t ";; ~A~%" line)))
+#+end_src
+
+#+RESULTS: test
+#+begin_src lisp :tangle no :eval no
+(+ 1 2)
+;; => 3
+#+end_src

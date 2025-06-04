@@ -1,0 +1,1335 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+<!-- 2025-06-05 Thu 07:39 -->
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>[func2exec]: Turn your lisp function to executable</title>
+<meta name="author" content="凉凉" />
+<meta name="generator" content="Org Mode" />
+<style type="text/css">
+  #content { max-width: 60em; margin: auto; }
+  .title  { text-align: center;
+             margin-bottom: .2em; }
+  .subtitle { text-align: center;
+              font-size: medium;
+              font-weight: bold;
+              margin-top:0; }
+  .todo   { font-family: monospace; color: red; }
+  .done   { font-family: monospace; color: green; }
+  .priority { font-family: monospace; color: orange; }
+  .tag    { background-color: #eee; font-family: monospace;
+            padding: 2px; font-size: 80%; font-weight: normal; }
+  .timestamp { color: #bebebe; }
+  .timestamp-kwd { color: #5f9ea0; }
+  .org-right  { margin-left: auto; margin-right: 0px;  text-align: right; }
+  .org-left   { margin-left: 0px;  margin-right: auto; text-align: left; }
+  .org-center { margin-left: auto; margin-right: auto; text-align: center; }
+  .underline { text-decoration: underline; }
+  #postamble p, #preamble p { font-size: 90%; margin: .2em; }
+  p.verse { margin-left: 3%; }
+  pre {
+    border: 1px solid #e6e6e6;
+    border-radius: 3px;
+    background-color: #f2f2f2;
+    padding: 8pt;
+    font-family: monospace;
+    overflow: auto;
+    margin: 1.2em;
+  }
+  pre.src {
+    position: relative;
+    overflow: auto;
+  }
+  pre.src:before {
+    display: none;
+    position: absolute;
+    top: -8px;
+    right: 12px;
+    padding: 3px;
+    color: #555;
+    background-color: #f2f2f299;
+  }
+  pre.src:hover:before { display: inline; margin-top: 14px;}
+  /* Languages per Org manual */
+  pre.src-asymptote:before { content: 'Asymptote'; }
+  pre.src-awk:before { content: 'Awk'; }
+  pre.src-authinfo::before { content: 'Authinfo'; }
+  pre.src-C:before { content: 'C'; }
+  pre.src-C\+\+:before { content: 'C++'; }
+  pre.src-clojure:before { content: 'Clojure'; }
+  pre.src-css:before { content: 'CSS'; }
+  pre.src-D:before { content: 'D'; }
+  pre.src-ditaa:before { content: 'ditaa'; }
+  pre.src-dot:before { content: 'Graphviz'; }
+  pre.src-calc:before { content: 'Emacs Calc'; }
+  pre.src-emacs-lisp:before { content: 'Emacs Lisp'; }
+  pre.src-fortran:before { content: 'Fortran'; }
+  pre.src-gnuplot:before { content: 'gnuplot'; }
+  pre.src-haskell:before { content: 'Haskell'; }
+  pre.src-hledger:before { content: 'hledger'; }
+  pre.src-java:before { content: 'Java'; }
+  pre.src-js:before { content: 'Javascript'; }
+  pre.src-latex:before { content: 'LaTeX'; }
+  pre.src-ledger:before { content: 'Ledger'; }
+  pre.src-lisp:before { content: 'Lisp'; }
+  pre.src-lilypond:before { content: 'Lilypond'; }
+  pre.src-lua:before { content: 'Lua'; }
+  pre.src-matlab:before { content: 'MATLAB'; }
+  pre.src-mscgen:before { content: 'Mscgen'; }
+  pre.src-ocaml:before { content: 'Objective Caml'; }
+  pre.src-octave:before { content: 'Octave'; }
+  pre.src-org:before { content: 'Org mode'; }
+  pre.src-oz:before { content: 'OZ'; }
+  pre.src-plantuml:before { content: 'Plantuml'; }
+  pre.src-processing:before { content: 'Processing.js'; }
+  pre.src-python:before { content: 'Python'; }
+  pre.src-R:before { content: 'R'; }
+  pre.src-ruby:before { content: 'Ruby'; }
+  pre.src-sass:before { content: 'Sass'; }
+  pre.src-scheme:before { content: 'Scheme'; }
+  pre.src-screen:before { content: 'Gnu Screen'; }
+  pre.src-sed:before { content: 'Sed'; }
+  pre.src-sh:before { content: 'shell'; }
+  pre.src-sql:before { content: 'SQL'; }
+  pre.src-sqlite:before { content: 'SQLite'; }
+  /* additional languages in org.el's org-babel-load-languages alist */
+  pre.src-forth:before { content: 'Forth'; }
+  pre.src-io:before { content: 'IO'; }
+  pre.src-J:before { content: 'J'; }
+  pre.src-makefile:before { content: 'Makefile'; }
+  pre.src-maxima:before { content: 'Maxima'; }
+  pre.src-perl:before { content: 'Perl'; }
+  pre.src-picolisp:before { content: 'Pico Lisp'; }
+  pre.src-scala:before { content: 'Scala'; }
+  pre.src-shell:before { content: 'Shell Script'; }
+  pre.src-ebnf2ps:before { content: 'ebfn2ps'; }
+  /* additional language identifiers per "defun org-babel-execute"
+       in ob-*.el */
+  pre.src-cpp:before  { content: 'C++'; }
+  pre.src-abc:before  { content: 'ABC'; }
+  pre.src-coq:before  { content: 'Coq'; }
+  pre.src-groovy:before  { content: 'Groovy'; }
+  /* additional language identifiers from org-babel-shell-names in
+     ob-shell.el: ob-shell is the only babel language using a lambda to put
+     the execution function name together. */
+  pre.src-bash:before  { content: 'bash'; }
+  pre.src-csh:before  { content: 'csh'; }
+  pre.src-ash:before  { content: 'ash'; }
+  pre.src-dash:before  { content: 'dash'; }
+  pre.src-ksh:before  { content: 'ksh'; }
+  pre.src-mksh:before  { content: 'mksh'; }
+  pre.src-posh:before  { content: 'posh'; }
+  /* Additional Emacs modes also supported by the LaTeX listings package */
+  pre.src-ada:before { content: 'Ada'; }
+  pre.src-asm:before { content: 'Assembler'; }
+  pre.src-caml:before { content: 'Caml'; }
+  pre.src-delphi:before { content: 'Delphi'; }
+  pre.src-html:before { content: 'HTML'; }
+  pre.src-idl:before { content: 'IDL'; }
+  pre.src-mercury:before { content: 'Mercury'; }
+  pre.src-metapost:before { content: 'MetaPost'; }
+  pre.src-modula-2:before { content: 'Modula-2'; }
+  pre.src-pascal:before { content: 'Pascal'; }
+  pre.src-ps:before { content: 'PostScript'; }
+  pre.src-prolog:before { content: 'Prolog'; }
+  pre.src-simula:before { content: 'Simula'; }
+  pre.src-tcl:before { content: 'tcl'; }
+  pre.src-tex:before { content: 'TeX'; }
+  pre.src-plain-tex:before { content: 'Plain TeX'; }
+  pre.src-verilog:before { content: 'Verilog'; }
+  pre.src-vhdl:before { content: 'VHDL'; }
+  pre.src-xml:before { content: 'XML'; }
+  pre.src-nxml:before { content: 'XML'; }
+  /* add a generic configuration mode; LaTeX export needs an additional
+     (add-to-list 'org-latex-listings-langs '(conf " ")) in .emacs */
+  pre.src-conf:before { content: 'Configuration File'; }
+
+  table { border-collapse:collapse; }
+  caption.t-above { caption-side: top; }
+  caption.t-bottom { caption-side: bottom; }
+  td, th { vertical-align:top;  }
+  th.org-right  { text-align: center;  }
+  th.org-left   { text-align: center;   }
+  th.org-center { text-align: center; }
+  td.org-right  { text-align: right;  }
+  td.org-left   { text-align: left;   }
+  td.org-center { text-align: center; }
+  dt { font-weight: bold; }
+  .footpara { display: inline; }
+  .footdef  { margin-bottom: 1em; }
+  .figure { padding: 1em; }
+  .figure p { text-align: center; }
+  .equation-container {
+    display: table;
+    text-align: center;
+    width: 100%;
+  }
+  .equation {
+    vertical-align: middle;
+  }
+  .equation-label {
+    display: table-cell;
+    text-align: right;
+    vertical-align: middle;
+  }
+  .inlinetask {
+    padding: 10px;
+    border: 2px solid gray;
+    margin: 10px;
+    background: #ffffcc;
+  }
+  #org-div-home-and-up
+   { text-align: right; font-size: 70%; white-space: nowrap; }
+  textarea { overflow-x: auto; }
+  .linenr { font-size: smaller }
+  .code-highlighted { background-color: #ffff00; }
+  .org-info-js_info-navigation { border-style: none; }
+  #org-info-js_console-label
+    { font-size: 10px; font-weight: bold; white-space: nowrap; }
+  .org-info-js_search-highlight
+    { background-color: #ffff00; color: #000000; font-weight: bold; }
+  .org-svg { }
+</style>
+</head>
+<body>
+<div id="content" class="content">
+<h1 class="title">[func2exec]: Turn your lisp function to executable</h1>
+<div id="table-of-contents" role="doc-toc">
+<h2>Table of Contents</h2>
+<div id="text-table-of-contents" role="doc-toc">
+<ul>
+<li><a href="#orga17f658">1. About</a>
+<ul>
+<li><a href="#org3b5c18c">1.1. Usage</a>
+<ul>
+<li><a href="#org0312db2">1.1.1. Basic executable arguments</a></li>
+<li><a href="#org2f92675">1.1.2. Argument parsing rules</a></li>
+<li><a href="#orgfb2fa6c">1.1.3. Build using external SBCL process (experimental)</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#org95facd7">2. Implementation</a>
+<ul>
+<li><a href="#org4dc1fa6">2.1. ASDF</a></li>
+<li><a href="#org87e7e19">2.2. Package</a>
+<ul>
+<li><a href="#org6af9c91">2.2.1. Configure</a></li>
+<li><a href="#orgf71330c">2.2.2. Utils</a></li>
+<li><a href="#org3d8b7da">2.2.3. ARGV &rarr; Function calling arguments: <code>parse-argv</code></a></li>
+<li><a href="#orgdce3654">2.2.4. Function &rarr; Executable: <code>func2exec</code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#orgdb2ac58">3. [Test] The Stand Alone <code>f2e</code> executable</a></li>
+<li><a href="#orgbe27cf2">4. License</a></li>
+</ul>
+</div>
+</div>
+<div id="outline-container-orga17f658" class="outline-2">
+<h2 id="orga17f658"><span class="section-number-2">1.</span> About</h2>
+<div class="outline-text-2" id="text-1">
+<p>
+So there's a lot of command line arguments parsing libraries for
+Common Lisp&#x2026; But what if I just want to make an executable as
+fast as I can?
+</p>
+
+<p>
+So you may give this project (func2exec) a try:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp" id="org4adf494">(func2exec:f2e 'a-function-you-want-to-call)
+</pre>
+</div>
+
+<p>
+That should be all you need to save lisp image as a stand alone
+executable (named as <code>a-function-you-want-to-call</code> by default).
+</p>
+
+<p>
+<b>Note</b>: Only support SBCL now.
+</p>
+</div>
+<div id="outline-container-org3b5c18c" class="outline-3">
+<h3 id="org3b5c18c"><span class="section-number-3">1.1.</span> Usage</h3>
+<div class="outline-text-3" id="text-1-1">
+<div class="org-src-container">
+<pre class="src src-lisp" id="orgdddc97a">(func2exec:f2e function
+               <span style="color: #C3C3C3; font-style: italic;">&amp;key</span> executable compression documentation
+               parse-hint flag-nicknames
+               external depends-on loads)
+</pre>
+</div>
+</div>
+<div id="outline-container-org0312db2" class="outline-4">
+<h4 id="org0312db2"><span class="section-number-4">1.1.1.</span> Basic executable arguments</h4>
+<div class="outline-text-4" id="text-1-1-1">
+<ul class="org-ul">
+<li><code>executable</code>: path to output executable file</li>
+<li><code>compression</code>: non <code>nil</code> for compress the output executable (SBCL)</li>
+<li><p>
+<code>documentation</code>: documentation string
+</p>
+
+<p>
+if not provided, the documentation will be evaluated by
+<a href="#orgd032937"><code>func2exec::function-docstring</code></a>.
+</p></li>
+</ul>
+</div>
+</div>
+<div id="outline-container-org2f92675" class="outline-4">
+<h4 id="org2f92675"><span class="section-number-4">1.1.2.</span> Argument parsing rules</h4>
+<div class="outline-text-4" id="text-1-1-2">
+<ul class="org-ul">
+<li><p>
+<code>parse-hint</code>: an alist for function lambda list type hints
+</p>
+
+<p>
+The alist element should be like <code>(var . type)</code>:
+</p>
+<ul class="org-ul">
+<li><code>var</code>: should be the variable name lambda list</li>
+<li><p>
+<code>type</code>: should be one of: <a id="orgc1cac27"></a>
+</p>
+
+<ul class="org-ul">
+<li><p>
+<code>:stdin</code>:  as the <code>*standard-input*</code> (only one)
+</p>
+
+<div class="org-src-container">
+<pre class="src src-sh">cat hello | func <span style="color: #DADADA;"># </span><span style="color: #616161;">(stream . :stdin) ;; =&gt; (func *standard-input*)</span>
+</pre>
+</div></li>
+<li><p>
+<code>:stdin*</code>: read <code>*standard-input*</code> as string (only one)
+</p>
+
+<div class="org-src-container">
+<pre class="src src-sh">cat hello | length <span style="color: #DADADA;"># </span><span style="color: #616161;">(sequence . :stdin*) =&gt; (length "hello") ;; =&gt; 5</span>
+</pre>
+</div></li>
+
+<li><p>
+<code>:read</code>:   read as lisp expression (literally)
+</p>
+
+<div class="org-src-container">
+<pre class="src src-sh">length <span style="color: #9E9E9E;">"(1 2 3)"</span> <span style="color: #DADADA;"># </span><span style="color: #616161;">(sequence . :read) =&gt; (length '(1 2 3)) ;; =&gt; 3</span>
+</pre>
+</div></li>
+<li><p>
+<code>:eval</code>:   read and evaluate the lisp expression
+</p>
+
+<div class="org-src-container">
+<pre class="src src-sh">length <span style="color: #9E9E9E;">"(list 1 2 3)"</span> <span style="color: #DADADA;"># </span><span style="color: #616161;">(sequence . :eval) =&gt; (length (list 1 2 3)) ;; =&gt; 3</span>
+</pre>
+</div></li>
+<li><p>
+<code>:plain</code>:  just read as string
+</p>
+
+<div class="org-src-container">
+<pre class="src src-sh">length <span style="color: #9E9E9E;">"(1 2 3)"</span> <span style="color: #DADADA;"># </span><span style="color: #616161;">(sequence . :plain) =&gt; (length "(1 2 3)") ;; =&gt; 7</span>
+</pre>
+</div></li>
+<li><p>
+<code>:flag</code>:   if not given, it's value would be <code>nil</code>, otherwise, <code>t</code> (key only)
+</p>
+
+<div class="org-src-container">
+<pre class="src src-sh">func --flag <span style="color: #DADADA;"># </span><span style="color: #616161;">(func :flag t)</span>
+func        <span style="color: #DADADA;"># </span><span style="color: #616161;">(func :flag nil)</span>
+</pre>
+</div></li>
+</ul>
+
+<p>
+See <a href="#orgd74d462"><code>func2exec::read-arg</code></a> for reading type implementation.
+</p>
+
+<p>
+See for default parse type hint.
+</p></li>
+</ul>
+
+<p>
+See <a href="#orgdd10343"><code>func2exec:parse-argv</code></a>.
+</p></li>
+<li><code>flag-nicknames</code>: an alist of function flag nicknames</li>
+</ul>
+</div>
+</div>
+<div id="outline-container-orgfb2fa6c" class="outline-4">
+<h4 id="orgfb2fa6c"><span class="section-number-4">1.1.3.</span> Build using external SBCL process (experimental)</h4>
+<div class="outline-text-4" id="text-1-1-3">
+<ul class="org-ul">
+<li><code>external</code>: non <code>nil</code> means to build executable using external SBCL process
+(this will not quit current Lisp process)</li>
+<li><code>depends-on</code>: a list of package names that current <code>function</code> depends on</li>
+<li><p>
+<code>loads</code>: a list of scripts the <code>function</code> should be loaded
+</p>
+
+<p>
+When loading the scripts, will switch to the scripts directory.
+So this will ensure that script will have correct relative path.
+</p></li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div id="outline-container-org95facd7" class="outline-2">
+<h2 id="org95facd7"><span class="section-number-2">2.</span> Implementation</h2>
+<div class="outline-text-2" id="text-2">
+</div>
+<div id="outline-container-org4dc1fa6" class="outline-3">
+<h3 id="org4dc1fa6"><span class="section-number-3">2.1.</span> ASDF</h3>
+<div class="outline-text-3" id="text-2-1">
+<div class="org-src-container">
+<pre class="src src-lisp" id="orgbac3a01">(asdf:defsystem <span style="color: #0E0E0E;">#:func2exec</span>
+  <span style="color: #0E0E0E;">:author</span> (<span style="color: #9E9E9E;">"&#20937;&#20937;"</span>)
+  <span style="color: #0E0E0E;">:version</span> <span style="color: #9E9E9E;">"0.1"</span>
+  <span style="color: #0E0E0E;">:description</span> <span style="color: #9E9E9E;">"Turn function to executable. "</span>
+  <span style="color: #0E0E0E;">:depends-on</span> (<span style="color: #0E0E0E;">:SB-INTROSPECT</span>)
+  <span style="color: #0E0E0E;">:serial</span> t
+  <span style="color: #0E0E0E;">:components</span>
+  ((<span style="color: #0E0E0E;">:file</span> <span style="color: #9E9E9E;">"func2exec"</span>)))
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-org87e7e19" class="outline-3">
+<h3 id="org87e7e19"><span class="section-number-3">2.2.</span> Package</h3>
+<div class="outline-text-3" id="text-2-2">
+<div class="org-src-container">
+<pre class="src src-lisp" id="orgfadb5cc">(<span style="color: #171717;">defpackage</span> <span style="color: #0E0E0E;">#:func2exec</span>
+  (<span style="color: #0E0E0E;">:use</span> <span style="color: #0E0E0E;">:cl</span>)
+  (<span style="color: #0E0E0E;">:export</span>
+   <span style="color: #DADADA;">;; </span><span style="color: #616161;">Configure</span>
+   <span style="color: #0E0E0E;">#:*executable*</span>
+   <span style="color: #0E0E0E;">#:*dynamic-space-size*</span>
+   <span style="color: #0E0E0E;">#:*control-stack-size*</span>
+   <span style="color: #0E0E0E;">#:*parse-hint*</span>
+   <span style="color: #0E0E0E;">#:*default-parse-hint*</span>
+   <span style="color: #0E0E0E;">#:*flag-nicknames*</span>
+   <span style="color: #0E0E0E;">#:*help-flags*</span>
+
+   <span style="color: #0E0E0E;">#:f2e</span>
+   <span style="color: #0E0E0E;">#:func2exec</span>))
+
+(<span style="color: #171717;">in-package</span> <span style="color: #0E0E0E;">:func2exec</span>)
+</pre>
+</div>
+</div>
+<div id="outline-container-org6af9c91" class="outline-4">
+<h4 id="org6af9c91"><span class="section-number-4">2.2.1.</span> Configure</h4>
+<div class="outline-text-4" id="text-2-2-1">
+<p>
+These values are used to configure how to generate the executable:
+</p>
+
+<ul class="org-ul">
+<li><p>
+<code>*executable*</code>: default executable output name (fallback)
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp" id="orgd03e9b2">(<span style="color: #171717;">defparameter</span> <span style="color: #616161;">*executable*</span> <span style="color: #9E9E9E;">"executable"</span>
+  <span style="color: #616161;">"Default `</span><span style="color: #252525;">func2exec</span><span style="color: #616161;">' executable name fallback. "</span>)
+</pre>
+</div></li>
+
+<li><p>
+<code>*dynamic-space-size*</code>
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp" id="org700ace0">(<span style="color: #171717;">defparameter</span> <span style="color: #616161;">*dynamic-space-size*</span> nil
+  <span style="color: #616161;">"Runtime option --dynamic-space-size for external SBCL.</span>
+<span style="color: #616161;">Set to be `</span><span style="color: #252525;">nil</span><span style="color: #616161;">' will use current image runtime option. "</span>)
+</pre>
+</div></li>
+
+<li><p>
+<code>*control-stack-size*</code>
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp" id="org90a992b">(<span style="color: #171717;">defparameter</span> <span style="color: #616161;">*control-stack-size*</span> nil
+  <span style="color: #616161;">"Runtime option --control-stack-size for external SBCL.</span>
+<span style="color: #616161;">Set to be `</span><span style="color: #252525;">nil</span><span style="color: #616161;">' will use current image runtime option. "</span>)
+</pre>
+</div></li>
+
+<li><p>
+<code>*flag-nicknames*</code>: predefined flag nicknames
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp" id="orgcff2122">(<span style="color: #171717;">defparameter</span> <span style="color: #616161;">*flag-nicknames*</span> '((<span style="color: #0E0E0E;">:h</span> . <span style="color: #0E0E0E;">:help</span>))
+  <span style="color: #616161;">"Flag nicknames as fallback. "</span>)
+</pre>
+</div></li>
+
+<li><p>
+<code>*parse-hint*</code>: predefined parse hints
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp" id="org6f42ca2">(<span style="color: #171717;">defparameter</span> <span style="color: #616161;">*parse-hint*</span> '((<span style="color: #0E0E0E;">:help</span> . <span style="color: #0E0E0E;">:flag</span>))
+  <span style="color: #616161;">"Parse hint fallbacks. "</span>)
+</pre>
+</div></li>
+
+<li><p>
+<code>*default-parse-hint*</code>: default parse hint option
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp" id="org902dbee">(<span style="color: #171717;">defparameter</span> <span style="color: #616161;">*default-parse-hint*</span> <span style="color: #0E0E0E;">:read</span>
+  <span style="color: #616161;">"Default parse hint type. "</span>)
+</pre>
+</div></li>
+
+<li><p>
+<code>*help-flags*</code>: a list of help flags
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp" id="org21251fb">(<span style="color: #171717;">defparameter</span> <span style="color: #616161;">*help-flags*</span> '(<span style="color: #0E0E0E;">:help</span>)
+  <span style="color: #616161;">"A list of keys that will be used to print help message.  "</span>)
+</pre>
+</div></li>
+</ul>
+</div>
+</div>
+<div id="outline-container-orgf71330c" class="outline-4">
+<h4 id="orgf71330c"><span class="section-number-4">2.2.2.</span> Utils</h4>
+<div class="outline-text-4" id="text-2-2-2">
+<p>
+These utils function
+</p>
+</div>
+<ol class="org-ol">
+<li><a id="orgd8e9faf"></a><code>(function-lambda-list function)</code> &rarr; lambda list of <code>function</code><br />
+<div class="outline-text-5" id="text-2-2-2-1">
+<div class="org-src-container">
+<pre class="src src-lisp" id="orgbba900d">#+sbcl
+(<span style="color: #171717;">require</span> <span style="color: #252525;">:sb-introspect</span>)
+
+(<span style="color: #171717;">defun</span> <span style="color: #3C3C3C;">function-lambda-list</span> (function)
+  <span style="color: #616161;">"Return `</span><span style="color: #252525;">function</span><span style="color: #616161;">' lambda list. "</span>
+  #+sbcl (sb-introspect:function-lambda-list function))
+</pre>
+</div>
+</div>
+</li>
+<li><a id="org0ae1101"></a><code>(command-line-arguments)</code> &rarr; a list of command line arguments (ARGV)<br />
+<div class="outline-text-5" id="text-2-2-2-2">
+<div class="org-src-container">
+<pre class="src src-lisp" id="orgddcf3fb">(<span style="color: #171717;">defun</span> <span style="color: #3C3C3C;">command-line-arguments</span> ()
+  #+sbcl (rest sb-ext:*posix-argv*))
+</pre>
+</div>
+
+<p>
+The command line arguments should strip the first argument,
+the name of executable file.
+</p>
+</div>
+</li>
+<li><a id="org04eabf3"></a><code>(lisp-runtime-arguments)</code> &rarr; a list of lisp runtime arguments<br />
+<div class="outline-text-5" id="text-2-2-2-3">
+<div class="org-src-container">
+<pre class="src src-lisp" id="org8b26534">(<span style="color: #171717;">defun</span> <span style="color: #3C3C3C;">lisp-runtime-arguments</span> ()
+  #+sbcl
+  (list <span style="color: #9E9E9E;">"--dynamic-space-size"</span>
+        (format nil <span style="color: #9E9E9E;">"~d"</span>
+                (or *dynamic-space-size*
+                    (/ (sb-ext:dynamic-space-size)
+                       1024 1024)))
+        <span style="color: #9E9E9E;">"--control-stack-size"</span>
+        (format nil <span style="color: #9E9E9E;">"~d"</span>
+                (or *control-stack-size*
+                    (/ (- sb-vm:*control-stack-end*
+                          sb-vm:*control-stack-start*)
+                       1024 1024)))
+        <span style="color: #9E9E9E;">"--non-interactive"</span>))
+</pre>
+</div>
+
+<p>
+The runtime arguments should extracted from current Lisp image.
+</p>
+</div>
+</li>
+<li><a id="orgd66f0ea"></a><code>(symbol-&gt;keyword symbol)</code> &rarr; keyword of symbol<br />
+<div class="outline-text-5" id="text-2-2-2-4">
+<div class="org-src-container">
+<pre class="src src-lisp" id="org8c7e834">(<span style="color: #171717;">defun</span> <span style="color: #3C3C3C;">symbol-&gt;keyword</span> (symbol)
+  (<span style="color: #171717;">declare</span> (type symbol symbol))
+  (intern (symbol-name symbol) <span style="color: #0E0E0E;">:keyword</span>))
+</pre>
+</div>
+</div>
+</li>
+<li><a id="org1d46a07"></a><code>(normalize-parse-hint parse-hint)</code> &rarr; normalized parse hint alist<br />
+<div class="outline-text-5" id="text-2-2-2-5">
+<p>
+A normailzed <code>parse-hint</code> alist is an alist with elements:
+</p>
+<ul class="org-ul">
+<li><code>var</code>: name as keyword &larr; <code>symbol</code>, <code>keyword</code>, <code>string</code></li>
+<li><code>type</code>: keyword as valid <code>parse-hint</code> <a href="#orgc1cac27">rule</a> ! error if not</li>
+</ul>
+
+<div class="org-src-container">
+<pre class="src src-lisp" id="org53310b2">(<span style="color: #171717;">defun</span> <span style="color: #3C3C3C;">normalize-parse-hint</span> (parse-hint)
+  (<span style="color: #171717;">loop</span> for (var* . type) in parse-hint
+        for var = (<span style="color: #171717;">etypecase</span> var*
+                    (keyword var*)
+                    (symbol  (symbol-&gt;keyword var*))
+                    (string  (intern (string-upcase var*) <span style="color: #0E0E0E;">:keyword</span>)))
+        do (<span style="color: #252525; background-color: #DADADA; font-weight: bold;">assert</span> (member type '(<span style="color: #0E0E0E;">:stdin</span> <span style="color: #0E0E0E;">:stdin*</span> <span style="color: #0E0E0E;">:read</span> <span style="color: #0E0E0E;">:eval</span> <span style="color: #0E0E0E;">:plain</span> <span style="color: #0E0E0E;">:flag</span>)))
+        collect (cons var type)))
+</pre>
+</div>
+
+<p>
+<b>Test</b>:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp">(normalize-parse-hint '((<span style="color: #0E0E0E;">:foo</span> . <span style="color: #0E0E0E;">:read</span>) (<span style="color: #9E9E9E;">"bar"</span> . <span style="color: #0E0E0E;">:flag</span>)))
+<span style="color: #DADADA;">;; </span><span style="color: #616161;">=&gt; ((:foo . :read) (:bar . :flag))</span>
+</pre>
+</div>
+</div>
+</li>
+<li><a id="org969f0eb"></a><code>(parse-lambda-list lambda-list parse-hint)</code> &rarr; normal, optional, key, rest-p, other-keys-p<br />
+<div class="outline-text-5" id="text-2-2-2-6">
+<div class="org-src-container">
+<pre class="src src-lisp" id="orgb59bd41">(<span style="color: #171717;">defun</span> <span style="color: #3C3C3C;">parse-lambda-list</span> (lambda-list <span style="color: #C3C3C3; font-style: italic;">&amp;optional</span> parse-hint)
+  <span style="color: #616161;">"Parse `</span><span style="color: #252525;">lambda-list</span><span style="color: #616161;">' with `</span><span style="color: #252525;">parse-hint</span><span style="color: #616161;">' annotated.</span>
+<span style="color: #616161;">Return values are normal, optional, key, rest-p, other-keys-p.</span>
+
+<span style="color: #616161;">Parameters:</span>
+<span style="color: #616161;">+ `</span><span style="color: #252525;">lambda-list</span><span style="color: #616161;">': should having the syntax</span>
+
+<span style="color: #616161;">      &lt;lambda-list&gt; ::= &lt;normal&gt;*</span>
+<span style="color: #616161;">                        (&amp;optional &lt;option&gt;*)?</span>
+<span style="color: #616161;">                        (&amp;key &lt;key&gt;* &amp;allow-other-keys?)?</span>
+
+<span style="color: #616161;">+ `</span><span style="color: #252525;">parse-hint</span><span style="color: #616161;">': the alist of variable type hint</span>
+<span style="color: #616161;">  See `</span><span style="color: #252525;">func2exec:func2exec</span><span style="color: #616161;">'.</span>
+<span style="color: #616161;">"</span>
+  (<span style="color: #171717;">loop</span> with stat         = <span style="color: #0E0E0E;">:normal</span>
+        with skip         = nil
+        with rest-p       = nil
+        with other-keys-p = nil
+        with parse-hint   = (normalize-parse-hint
+                             (append parse-hint *parse-hint*))
+
+        for var* in lambda-list
+        for sym  = (<span style="color: #171717;">if</span> (listp var*) (first var*) var*)
+        for var  = (symbol-&gt;keyword sym)
+        for type = (or (cdr (assoc var parse-hint))
+                       *default-parse-hint*)
+
+        do (<span style="color: #171717;">cond</span> ((eq sym '<span style="color: #C3C3C3; font-style: italic;">&amp;optional</span>)
+                  (setf skip <span style="color: #0E0E0E;">:optional</span>
+                        stat nil))
+                 ((eq sym '<span style="color: #C3C3C3; font-style: italic;">&amp;key</span>)
+                  (setf skip <span style="color: #0E0E0E;">:key</span>
+                        stat nil))
+                 ((eq sym '<span style="color: #C3C3C3; font-style: italic;">&amp;rest</span>)
+                  (setf skip   <span style="color: #0E0E0E;">:rest</span>
+                        stat   nil
+                        rest-p t))
+                 ((eq sym '<span style="color: #C3C3C3; font-style: italic;">&amp;allow-other-keys</span>)
+                  (setf stat         nil
+                        skip         nil
+                        other-keys-p t)))
+
+        if (eq stat <span style="color: #0E0E0E;">:normal</span>)
+          collect (cons var type) into normal
+        if (eq stat <span style="color: #0E0E0E;">:optional</span>)
+          collect (cons var type) into optional
+        if (eq stat <span style="color: #0E0E0E;">:key</span>)
+          collect (cons var type) into key
+
+        if skip
+          do (shiftf stat skip nil)
+
+        finally (<span style="color: #171717;">return</span> (values normal optional key rest-p other-keys-p))))
+</pre>
+</div>
+
+<p>
+<b>Test</b>:
+</p>
+</div>
+<ol class="org-ol">
+<li><a id="orgc9f2f5b"></a>Basic<br />
+<div class="outline-text-6" id="text-2-2-2-6-1">
+<div class="org-src-container">
+<pre class="src src-lisp">(parse-lambda-list (function-lambda-list #'parse-lambda-list))
+<span style="color: #DADADA;">;; </span><span style="color: #616161;">=&gt; ((:lambda-list . :read)), ((:parse-hint . :read)), nil, nil, nil</span>
+</pre>
+</div>
+</div>
+</li>
+<li><a id="org32a2c26"></a>Parse hint<br />
+<div class="outline-text-6" id="text-2-2-2-6-2">
+<p>
+With <code>parse-hint</code> for normal arguments:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp">(parse-lambda-list (function-lambda-list #'parse-lambda-list)
+                   '((lambda-list . <span style="color: #0E0E0E;">:plain</span>)))
+<span style="color: #DADADA;">;; </span><span style="color: #616161;">=&gt; ((:lambda-list . :plain)), ((:parse-hint . :read)), nil, nil, nil</span>
+</pre>
+</div>
+
+<p>
+With <code>parse-hint</code> for key arguments:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp">(parse-lambda-list '(x <span style="color: #C3C3C3; font-style: italic;">&amp;key</span> y z) '((y . <span style="color: #0E0E0E;">:flag</span>)))
+<span style="color: #DADADA;">;; </span><span style="color: #616161;">=&gt; ((:x . :read)), nil, ((:y . :flag) (:z . :read)), nil, nil</span>
+</pre>
+</div>
+</div>
+</li>
+<li><a id="orgc01036e"></a>Complex<br />
+<div class="outline-text-6" id="text-2-2-2-6-3">
+<p>
+With <code>&amp;key</code> and <code>&amp;allow-other-keys</code>:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp">(parse-lambda-list '(x <span style="color: #C3C3C3; font-style: italic;">&amp;rest</span> args <span style="color: #C3C3C3; font-style: italic;">&amp;key</span> y <span style="color: #C3C3C3; font-style: italic;">&amp;allow-other-keys</span>))
+<span style="color: #DADADA;">;; </span><span style="color: #616161;">=&gt; ((:x . :read)), nil, ((:y . :read)), t, t</span>
+</pre>
+</div>
+
+<p>
+Complex lambda list:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp">(parse-lambda-list '(x <span style="color: #C3C3C3; font-style: italic;">&amp;rest</span> y <span style="color: #C3C3C3; font-style: italic;">&amp;key</span> z <span style="color: #C3C3C3; font-style: italic;">&amp;allow-other-keys</span>))
+<span style="color: #DADADA;">;; </span><span style="color: #616161;">=&gt; ((:x . :read)), nil, ((:z . :read)), t, t</span>
+</pre>
+</div>
+</div>
+</li>
+</ol>
+</li>
+<li><a id="org88d5df6"></a><code>(function-docstring function exec &amp;optional parse-hint)</code> &rarr; documentation string of <code>function</code><br />
+<div class="outline-text-5" id="text-2-2-2-7">
+<p>
+This should generate a docstring for <code>--help</code> key print out.
+</p>
+<ol class="org-ol">
+<li>the <a href="#coderef-docstr.first" class="coderef" onmouseover="CodeHighlightOn(this, 'coderef-docstr.first');" onmouseout="CodeHighlightOff(this, 'coderef-docstr.first');">first line</a> should be the executable name, args input</li>
+<li>then <a href="#coderef-docstr.rest" class="coderef" onmouseover="CodeHighlightOn(this, 'coderef-docstr.rest');" onmouseout="CodeHighlightOff(this, 'coderef-docstr.rest');">the rest</a> should list all arguments and how they are parsed</li>
+<li><a href="#coderef-docstr.last" class="coderef" onmouseover="CodeHighlightOn(this, 'coderef-docstr.last');" onmouseout="CodeHighlightOff(this, 'coderef-docstr.last');">the last</a> of docstring should be the lisp function documentation string</li>
+</ol>
+
+<div class="org-src-container">
+<pre class="src src-lisp" id="orgd032937">(<span style="color: #171717;">defun</span> <span style="color: #3C3C3C;">function-docstring</span> (function exec <span style="color: #C3C3C3; font-style: italic;">&amp;key</span> parse-hint)
+  <span style="color: #616161;">"Return the documentation string of `</span><span style="color: #252525;">function</span><span style="color: #616161;">'"</span>
+  (<span style="color: #171717;">with-output-to-string</span> (*standard-output*)
+    (<span style="color: #171717;">multiple-value-bind</span> (normal optional keys rest-p other-key-p)
+        (parse-lambda-list (function-lambda-list function) parse-hint)
+
+      <span style="color: #DADADA;">;; </span><span style="color: #616161;">exec args [optional args] { --key ... } (ref:docstr.first)</span>
+      (format t <span style="color: #9E9E9E;">"~A ~{~A~^ ~}"</span> exec (mapcar #'car normal))
+      (<span style="color: #171717;">when</span> optional (format t <span style="color: #9E9E9E;">" [~{~A~^ ~}]"</span> (mapcar #'car optional)))
+      (<span style="color: #171717;">when</span> rest-p (format t <span style="color: #9E9E9E;">" ... "</span>))
+      (<span style="color: #171717;">when</span> keys   (format t <span style="color: #9E9E9E;">" { --key ... }"</span>))
+      (format t <span style="color: #9E9E9E;">"~%~%"</span>)
+
+      <span style="color: #DADADA;">;; </span><span style="color: #616161;">list of keys                            (ref:docstr.rest)</span>
+      (<span style="color: #171717;">let</span> ((lines ())
+            (types ()))
+        (<span style="color: #171717;">loop</span> for (var . type) in normal
+              do (push (format nil <span style="color: #9E9E9E;">"  ~A"</span> var)         lines)
+              do (push (format nil <span style="color: #9E9E9E;">" [~:@(~A~)]"</span> type) types))
+        (<span style="color: #171717;">when</span> optional
+          (push <span style="color: #9E9E9E;">"  &amp;optional"</span> lines)
+          (push <span style="color: #9E9E9E;">""</span>            types)
+          (<span style="color: #171717;">loop</span> for (var . type) in optional
+                do (push (format nil <span style="color: #9E9E9E;">"  ~A"</span> var)         lines)
+                do (push (format nil <span style="color: #9E9E9E;">" [~:@(~A~)]"</span> type) types)))
+        (<span style="color: #171717;">loop</span> for (var . type) in keys
+              do (push (format nil <span style="color: #9E9E9E;">"  --~A"</span>      var)  lines)
+              do (push (format nil <span style="color: #9E9E9E;">" [~:@(~A~)]"</span> type) types))
+        (<span style="color: #171717;">when</span> lines
+          (<span style="color: #171717;">let</span> ((max (reduce #'max (mapcar #'length lines))))
+            (<span style="color: #171717;">loop</span> for line in (reverse lines)
+                  for type in (reverse types)
+                  do (format t <span style="color: #9E9E9E;">"~vA ~A~%"</span> (1+ max) line type))))
+        (<span style="color: #171717;">when</span> other-key-p
+          (format t <span style="color: #9E9E9E;">"  ... allow other keys~%"</span>))
+
+        <span style="color: #DADADA;">;; </span><span style="color: #616161;">Lisp function docstrings                (ref:docstr.last)</span>
+        (format t <span style="color: #9E9E9E;">"~&amp;~%~A~&amp;"</span> (or (documentation function 'function) <span style="color: #9E9E9E;">""</span>))))))
+</pre>
+</div>
+
+<p>
+<b>Test</b>:
+</p>
+</div>
+</li>
+<li><a id="orgf166c33"></a>Basic<br />
+<div class="outline-text-5" id="text-2-2-2-8">
+<div class="org-src-container">
+<pre class="src src-lisp">(function-docstring #'function-docstring <span style="color: #9E9E9E;">"function-docstring"</span>)
+<span style="color: #DADADA;">;; </span><span style="color: #616161;">=&gt; "function-docstring function exec { --key ... }</span>
+<span style="color: #DADADA;">;; </span>
+<span style="color: #DADADA;">;;   </span><span style="color: #616161;">function       [READ]</span>
+<span style="color: #DADADA;">;;   </span><span style="color: #616161;">exec           [READ]</span>
+<span style="color: #DADADA;">;;   </span><span style="color: #616161;">--parse-hint   [READ]</span>
+<span style="color: #DADADA;">;; </span>
+<span style="color: #DADADA;">;; </span><span style="color: #616161;">Return the documentation string of `</span><span style="color: #252525;">function</span><span style="color: #616161;">'</span>
+<span style="color: #DADADA;">;; </span><span style="color: #616161;">"</span>
+</pre>
+</div>
+
+<p>
+Return empty string for function with no docstring:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp">(function-docstring (<span style="color: #171717;">lambda</span> ()) <span style="color: #9E9E9E;">"nodoc"</span>)
+<span style="color: #DADADA;">;; </span><span style="color: #616161;">=&gt; "nodoc </span>
+<span style="color: #DADADA;">;; </span>
+<span style="color: #DADADA;">;; </span>
+<span style="color: #DADADA;">;; </span><span style="color: #616161;">"</span>
+</pre>
+</div>
+</div>
+</li>
+<li><a id="orgdfdb9ea"></a>Parsed hint<br />
+<div class="outline-text-5" id="text-2-2-2-9">
+<div class="org-src-container">
+<pre class="src src-lisp">(function-docstring (<span style="color: #171717;">lambda</span> (<span style="color: #C3C3C3; font-style: italic;">&amp;key</span> foo bar) (<span style="color: #171717;">declare</span> (ignore foo bar))) <span style="color: #9E9E9E;">"key"</span>
+                    <span style="color: #0E0E0E;">:parse-hint</span> '((<span style="color: #0E0E0E;">:foo</span> . <span style="color: #0E0E0E;">:flag</span>)))
+<span style="color: #DADADA;">;; </span><span style="color: #616161;">=&gt; "key  { --key ... }</span>
+<span style="color: #DADADA;">;; </span>
+<span style="color: #DADADA;">;;   </span><span style="color: #616161;">--foo   [FLAG]</span>
+<span style="color: #DADADA;">;;   </span><span style="color: #616161;">--bar   [READ]</span>
+<span style="color: #DADADA;">;; </span>
+<span style="color: #DADADA;">;; </span><span style="color: #616161;">"</span>
+</pre>
+</div>
+</div>
+</li>
+<li><a id="orgf56fcbf"></a>Complex<br />
+<div class="outline-text-5" id="text-2-2-2-10">
+<div class="org-src-container">
+<pre class="src src-lisp">(function-docstring #'parse-argv <span style="color: #9E9E9E;">"complex"</span>
+                    <span style="color: #0E0E0E;">:parse-hint</span> '((<span style="color: #0E0E0E;">:lambda-list</span> . <span style="color: #0E0E0E;">:eval</span>)))
+<span style="color: #DADADA;">;; </span><span style="color: #616161;">=&gt; "complex lambda-list argv { --key ... }</span>
+<span style="color: #DADADA;">;; </span>
+<span style="color: #DADADA;">;;   </span><span style="color: #616161;">lambda-list            [EVAL]</span>
+<span style="color: #DADADA;">;;   </span><span style="color: #616161;">argv                   [READ]</span>
+<span style="color: #DADADA;">;;   </span><span style="color: #616161;">--parse-hint           [READ]</span>
+<span style="color: #DADADA;">;;   </span><span style="color: #616161;">--flag-nicknames       [READ]</span>
+<span style="color: #DADADA;">;;   </span><span style="color: #616161;">--default-parse-hint   [READ]</span>
+<span style="color: #DADADA;">;; </span>
+<span style="color: #DADADA;">;; </span><span style="color: #616161;">Parse ARGV and return the calling form. </span>
+<span style="color: #DADADA;">;; </span><span style="color: #616161;">"</span>
+</pre>
+</div>
+</div>
+</li>
+</ol>
+</div>
+<div id="outline-container-org3d8b7da" class="outline-4">
+<h4 id="org3d8b7da"><span class="section-number-4">2.2.3.</span> ARGV &rarr; Function calling arguments: <code>parse-argv</code></h4>
+<div class="outline-text-4" id="text-2-2-3">
+<p>
+Parse the <code>(command-line-arguments)</code>.
+</p>
+</div>
+<ol class="org-ol">
+<li><a id="org5dc1c49"></a><code>(key-arg-p arg)</code> &rarr; test if arg is <code>--key</code> like arguments<br />
+<div class="outline-text-5" id="text-2-2-3-1">
+<div class="org-src-container">
+<pre class="src src-lisp" id="org6427d2e">(<span style="color: #171717;">defun</span> <span style="color: #3C3C3C;">key-arg-p</span> (arg)
+  (and (&gt; (length arg) 2)
+       (char= (aref arg 0) #\-)
+       (char= (aref arg 1) #\-)))
+</pre>
+</div>
+
+<p>
+<b>Test</b>:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp">(key-arg-p <span style="color: #9E9E9E;">"--key"</span>)
+<span style="color: #DADADA;">;; </span><span style="color: #616161;">=&gt; t</span>
+</pre>
+</div>
+</div>
+</li>
+<li><a id="org00ae777"></a><code>(read-arg type arg)</code> &rarr; return the argument parsed from <code>type</code><br />
+<div class="outline-text-5" id="text-2-2-3-2">
+<div class="org-src-container">
+<pre class="src src-lisp" id="orgd74d462">(<span style="color: #171717;">defun</span> <span style="color: #3C3C3C;">read-arg</span> (type arg)
+  (<span style="color: #171717;">declare</span> (type (member <span style="color: #0E0E0E;">:stdin</span> <span style="color: #0E0E0E;">:stdin*</span> <span style="color: #0E0E0E;">:read</span> <span style="color: #0E0E0E;">:eval</span> <span style="color: #0E0E0E;">:plain</span> <span style="color: #0E0E0E;">:flag</span>) type))
+  (<span style="color: #171717;">ecase</span> type
+    (<span style="color: #0E0E0E;">:stdin</span>  *standard-input*)
+    (<span style="color: #0E0E0E;">:stdin*</span> (<span style="color: #171717;">with-output-to-string</span> (in)
+               (<span style="color: #171717;">loop</span> for line = (read-line *standard-input* nil nil)
+                     while line
+                     do (write-line line in))))
+    (<span style="color: #0E0E0E;">:read</span>   (read-from-string arg))
+    (<span style="color: #0E0E0E;">:eval</span>   (eval (read-from-string arg)))
+    (<span style="color: #0E0E0E;">:plain</span>  arg)
+    (<span style="color: #0E0E0E;">:flag</span>   t)))
+</pre>
+</div>
+
+<p>
+<b>Test</b>:
+</p>
+
+<p>
+The <code>:stdin*</code> should read <code>*standard-input*</code> as string and use it.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp">(<span style="color: #171717;">with-input-from-string</span> (*standard-input* <span style="color: #9E9E9E;">"foo"</span>) (read-arg <span style="color: #0E0E0E;">:stdin*</span> nil))
+<span style="color: #DADADA;">;; </span><span style="color: #616161;">=&gt; "foo</span>
+<span style="color: #DADADA;">;; </span><span style="color: #616161;">"</span>
+</pre>
+</div>
+</div>
+</li>
+<li><a id="org8072f0f"></a><code>(parse-argv lambda-list argv &amp;key parse-hint flag-nicknames)</code> &rarr; funcall argument list<br />
+<div class="outline-text-5" id="text-2-2-3-3">
+<div class="org-src-container">
+<pre class="src src-lisp" id="orgdd10343">(<span style="color: #171717;">defun</span> <span style="color: #3C3C3C;">parse-argv</span> (lambda-list argv
+                   <span style="color: #C3C3C3; font-style: italic;">&amp;key</span> parse-hint flag-nicknames
+                     (default-parse-hint *default-parse-hint*))
+  <span style="color: #616161;">"Parse ARGV and return the calling form. "</span>
+  (<span style="color: #171717;">multiple-value-bind</span> (normal optional keys rest-p other-key-p)
+      (parse-lambda-list lambda-list parse-hint)
+    (<span style="color: #171717;">let</span> ((*default-parse-hint* default-parse-hint)
+          (flag-nicknames       (append flag-nicknames *flag-nicknames*)))
+      (<span style="color: #171717;">loop</span> with key*    = ()
+            with normal* = ()
+            with help?   = nil
+
+            while (not (endp argv))
+
+            do (<span style="color: #171717;">let</span> ((arg (pop argv)))
+                 (<span style="color: #171717;">if</span> (key-arg-p arg)
+                     <span style="color: #DADADA;">;; </span><span style="color: #616161;">Parse keys</span>
+                     (<span style="color: #171717;">let*</span> ((key  (symbol-&gt;keyword
+                                   (read-from-string arg t nil <span style="color: #0E0E0E;">:start</span> 2)))
+                            (key  (or (cdr (assoc key flag-nicknames)) key))
+                            (help (find key *help-flags*))
+                            (type (or (cdr (assoc key keys))
+                                      (and other-key-p default-parse-hint)
+                                      help
+                                      (<span style="color: #252525; background-color: #DADADA; font-weight: bold;">error</span> <span style="color: #9E9E9E;">"Unknown key ~S"</span> key)))
+                            (arg  (read-arg (<span style="color: #171717;">if</span> help <span style="color: #0E0E0E;">:flag</span> type)
+                                            (<span style="color: #171717;">unless</span> (or (eq type <span style="color: #0E0E0E;">:flag</span>) help)
+                                              (pop argv)))))
+                       (<span style="color: #171717;">when</span> help (setf help? t))
+                       (push arg key*)
+                       (push key key*))
+                     <span style="color: #DADADA;">;; </span><span style="color: #616161;">Parse normal and optional arguments</span>
+                     (<span style="color: #171717;">let*</span> ((type (<span style="color: #171717;">if</span> (endp normal)
+                                      (<span style="color: #171717;">if</span> (endp optional)
+                                          (<span style="color: #171717;">if</span> rest-p
+                                              <span style="color: #0E0E0E;">:plain</span>
+                                              (<span style="color: #252525; background-color: #DADADA; font-weight: bold;">error</span> <span style="color: #9E9E9E;">"Too many input arguments. "</span>))
+                                          (cdr (pop optional)))
+                                      (cdr (pop normal)))))
+                       (push (read-arg type arg) normal*))))
+
+            finally (<span style="color: #171717;">progn</span>
+                      (<span style="color: #171717;">unless</span> (or (endp normal) help?)
+                        (<span style="color: #252525; background-color: #DADADA; font-weight: bold;">error</span> <span style="color: #9E9E9E;">"Too few input arguments. "</span>))
+                      (<span style="color: #171717;">return</span> (values (nconc (nreverse normal*) key*))))))))
+</pre>
+</div>
+
+<p>
+<b>TODO</b>: Make it more neat
+</p>
+
+<p>
+<b>Test</b>:
+</p>
+</div>
+<ol class="org-ol">
+<li><a id="org67690a7"></a>Basic<br />
+<div class="outline-text-6" id="text-2-2-3-3-1">
+<div class="org-src-container">
+<pre class="src src-lisp">(parse-argv '(x y) '(<span style="color: #9E9E9E;">"x"</span> <span style="color: #9E9E9E;">"y"</span>) <span style="color: #0E0E0E;">:parse-hint</span> '((y . <span style="color: #0E0E0E;">:plain</span>)))
+<span style="color: #DADADA;">;; </span><span style="color: #616161;">=&gt; (x "y")</span>
+</pre>
+</div>
+</div>
+</li>
+<li><a id="orgae68bd5"></a>Help flag<br />
+<div class="outline-text-6" id="text-2-2-3-3-2">
+<div class="org-src-container">
+<pre class="src src-lisp">(parse-argv '(x y) '(<span style="color: #9E9E9E;">"--help"</span>))
+<span style="color: #DADADA;">;; </span><span style="color: #616161;">=&gt; (:help t)</span>
+</pre>
+</div>
+
+<div class="org-src-container">
+<pre class="src src-lisp">(parse-argv '(x y) '(<span style="color: #9E9E9E;">"--h"</span>))
+<span style="color: #DADADA;">;; </span><span style="color: #616161;">=&gt; (:help t)</span>
+</pre>
+</div>
+</div>
+</li>
+<li><a id="orge03c865"></a>Arguments number test<br />
+<div class="outline-text-6" id="text-2-2-3-3-3">
+<p>
+Will raise error if given too few arguments:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp">(parse-argv '(x y) '(<span style="color: #9E9E9E;">"x"</span>))
+<span style="color: #DADADA;">;; </span><span style="color: #616161;">=&gt; Error: Too few input arguments. </span>
+</pre>
+</div>
+
+<p>
+Will raise error if given too many arguments:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp">(parse-argv '(x y) '(<span style="color: #9E9E9E;">"x"</span> <span style="color: #9E9E9E;">"y"</span> <span style="color: #9E9E9E;">"z"</span>))
+<span style="color: #DADADA;">;; </span><span style="color: #616161;">=&gt; Error: Too many input arguments. </span>
+</pre>
+</div>
+
+<p>
+Will accept any number arguments if <code>&amp;rest</code>:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp">(parse-argv '(x y <span style="color: #C3C3C3; font-style: italic;">&amp;rest</span> more) '(<span style="color: #9E9E9E;">"x"</span> <span style="color: #9E9E9E;">"y"</span> <span style="color: #9E9E9E;">"z"</span>))
+<span style="color: #DADADA;">;; </span><span style="color: #616161;">=&gt; (x y "z")</span>
+</pre>
+</div>
+
+<p>
+Will raise error when given unknown arguments with fixed keys:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp">(parse-argv '(<span style="color: #C3C3C3; font-style: italic;">&amp;key</span> x y) '(<span style="color: #9E9E9E;">"--y"</span> <span style="color: #9E9E9E;">"foo"</span> <span style="color: #9E9E9E;">"--z"</span> <span style="color: #9E9E9E;">"bar"</span>))
+<span style="color: #DADADA;">;; </span><span style="color: #616161;">=&gt; Error: Unknown key :z</span>
+</pre>
+</div>
+
+<p>
+Will accept any keys if <code>&amp;allow-other-keys</code>:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp">(parse-argv '(<span style="color: #C3C3C3; font-style: italic;">&amp;key</span> x y <span style="color: #C3C3C3; font-style: italic;">&amp;allow-other-keys</span>) '(<span style="color: #9E9E9E;">"--y"</span> <span style="color: #9E9E9E;">"foo"</span> <span style="color: #9E9E9E;">"--z"</span> <span style="color: #9E9E9E;">"bar"</span>))
+<span style="color: #DADADA;">;; </span><span style="color: #616161;">=&gt; (:z bar :y foo)</span>
+</pre>
+</div>
+
+<p>
+Will accept key nicknames:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp">(parse-argv '(<span style="color: #C3C3C3; font-style: italic;">&amp;key</span> x) '(<span style="color: #9E9E9E;">"--xxx"</span> <span style="color: #9E9E9E;">"foo"</span>) <span style="color: #0E0E0E;">:flag-nicknames</span> '((<span style="color: #0E0E0E;">:xxx</span> . <span style="color: #0E0E0E;">:x</span>)))
+<span style="color: #DADADA;">;; </span><span style="color: #616161;">=&gt; (:x foo)</span>
+</pre>
+</div>
+</div>
+</li>
+</ol>
+</li>
+</ol>
+</div>
+<div id="outline-container-orgdce3654" class="outline-4">
+<h4 id="orgdce3654"><span class="section-number-4">2.2.4.</span> Function &rarr; Executable: <code>func2exec</code></h4>
+<div class="outline-text-4" id="text-2-2-4">
+</div>
+<ol class="org-ol">
+<li><a id="org5430bf9"></a><code>(func2exec-here executable function ...)</code><br />
+<div class="outline-text-5" id="text-2-2-4-1">
+<p>
+Call <code>save-lisp-and-die</code> in local SBCL image:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp" id="org1411ee8">(<span style="color: #171717;">defun</span> <span style="color: #3C3C3C;">func2exec-here</span> (executable function
+                       <span style="color: #C3C3C3; font-style: italic;">&amp;key</span> parse-hint flag-nicknames compression result)
+  (<span style="color: #171717;">let*</span> ((lambda-list (function-lambda-list function))
+         (exec        (file-namestring executable))
+         (document    (function-docstring function exec
+                                          <span style="color: #0E0E0E;">:parse-hint</span> parse-hint))
+         (print-fn    (<span style="color: #171717;">ecase</span> result
+                        (<span style="color: #0E0E0E;">:none</span>   (<span style="color: #171717;">lambda</span> (res) (<span style="color: #171717;">declare</span> (ignore res))))
+                        (<span style="color: #0E0E0E;">:plain</span>  #'print)
+                        (<span style="color: #0E0E0E;">:pretty</span> #'pprint)))
+         (toplevel    (<span style="color: #171717;">lambda</span> ()
+                        (<span style="color: #171717;">let</span> ((args (parse-argv lambda-list
+                                                (command-line-arguments)
+                                                <span style="color: #0E0E0E;">:parse-hint</span>     parse-hint
+                                                <span style="color: #0E0E0E;">:flag-nicknames</span> flag-nicknames)))
+                          (<span style="color: #171717;">if</span> (find <span style="color: #0E0E0E;">:help</span> args)
+                              (write-string document)
+                              (funcall print-fn (apply function args)))))))
+    #+sbcl
+    (sb-ext:save-lisp-and-die executable
+                              <span style="color: #0E0E0E;">:toplevel</span>             toplevel
+                              <span style="color: #0E0E0E;">:compression</span>          compression
+                              <span style="color: #0E0E0E;">:executable</span>           t
+                              <span style="color: #0E0E0E;">:save-runtime-options</span> t)))
+</pre>
+</div>
+</div>
+</li>
+<li><a id="orgda0abf8"></a><code>(func2exec-external executable function ...)</code> &rarr; executable<br />
+<div class="outline-text-5" id="text-2-2-4-2">
+<p>
+Call <code>save-lisp-and-die</code> in external SBCL image:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp" id="org6d8bb67">(<span style="color: #171717;">defun</span> <span style="color: #3C3C3C;">func2exec-external</span> (executable function
+                           <span style="color: #C3C3C3; font-style: italic;">&amp;key</span> parse-hint flag-nicknames compression result
+                             depends-on loads no-evaluate)
+  (<span style="color: #171717;">unless</span> (symbolp function)
+    (<span style="color: #252525; background-color: #DADADA; font-weight: bold;">error</span> <span style="color: #9E9E9E;">"Building externally should provide function as symbol. "</span>))
+  (<span style="color: #171717;">let*</span> ((*print-pretty* nil)
+         (cmd
+           `(<span style="color: #9E9E9E;">"sbcl"</span>
+             ,@(lisp-runtime-arguments)
+             <span style="color: #9E9E9E;">"--eval"</span> <span style="color: #9E9E9E;">"(ql:quickload :func2exec)"</span>
+             ,@(<span style="color: #171717;">when</span> depends-on
+                 (list <span style="color: #9E9E9E;">"--eval"</span> (format nil <span style="color: #9E9E9E;">"(ql:quickload '~S)"</span> depends-on)))
+             ,@(<span style="color: #171717;">loop</span> for load in loads
+                     for path = (truename load)
+                     for dir  = (format nil <span style="color: #9E9E9E;">"/~{~A~^/~}/"</span>
+                                        (cdr (pathname-directory path)))
+                     for src  = (file-namestring path)
+                     collect <span style="color: #9E9E9E;">"--eval"</span>
+                     collect (format nil
+                                     <span style="color: #9E9E9E;">"(uiop:with-current-directory (~S) (load ~S))"</span>
+                                     dir src))
+             <span style="color: #9E9E9E;">"--eval"</span>
+             ,(format nil
+                      (concatenate 'string
+                                   <span style="color: #9E9E9E;">"(let ((func2exec:*default-parse-hint* '~S)) "</span>
+                                   <span style="color: #9E9E9E;">"(func2exec::func2exec-here "</span>
+                                   <span style="color: #9E9E9E;">"~S #'~A::~A "</span>
+                                   <span style="color: #9E9E9E;">":parse-hint '~S "</span>
+                                   <span style="color: #9E9E9E;">":flag-nicknames '~S "</span>
+                                   <span style="color: #9E9E9E;">":compression '~S "</span>
+                                   <span style="color: #9E9E9E;">":result '~S))"</span>)
+                      *default-parse-hint* executable
+                      (package-name (symbol-package function))
+                      (symbol-name function)
+                      parse-hint flag-nicknames compression result))))
+    (<span style="color: #171717;">if</span> no-evaluate
+        cmd
+        (uiop:run-program cmd <span style="color: #0E0E0E;">:ignore-error-status</span> t
+                              <span style="color: #0E0E0E;">:output</span>              t
+                              <span style="color: #0E0E0E;">:error-output</span>        t))))
+</pre>
+</div>
+
+<p>
+<b>Test</b>:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp">(func2exec-external <span style="color: #9E9E9E;">"foo"</span> 'func2exec <span style="color: #0E0E0E;">:no-evaluate</span> t)
+<span style="color: #DADADA;">;; </span><span style="color: #616161;">=&gt; ("sbcl" "--dynamic-space-size" "20480" "--control-stack-size" "12"</span>
+<span style="color: #DADADA;">;;     </span><span style="color: #616161;">"--non-interactive" "--eval" "(ql:quickload :func2exec)" "--eval"</span>
+<span style="color: #DADADA;">;;     </span><span style="color: #616161;">"(let ((func2exec:*default-parse-hint* ':read)) (func2exec::func2exec-here \"foo\" #'FUNC2EXEC::FUNC2EXEC :parse-hint 'nil :flag-nicknames 'nil :compression 'nil :result 'nil))")</span>
+</pre>
+</div>
+
+<p>
+The given <code>function</code> argument should be symbol, otherwise, raise error.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp">(func2exec-external <span style="color: #9E9E9E;">"foo"</span> #'func2exec <span style="color: #0E0E0E;">:no-evaluate</span> t)
+<span style="color: #DADADA;">;; </span><span style="color: #616161;">=&gt; Error: Building externally should provide function as symbol. </span>
+</pre>
+</div>
+</div>
+</li>
+<li><a id="org1529fd9"></a><code>(func2exec function &amp;key ...)</code><br />
+<div class="outline-text-5" id="text-2-2-4-3">
+<div class="org-src-container">
+<pre class="src src-lisp" id="org67e79cb">(<span style="color: #171717;">defun</span> <span style="color: #3C3C3C;">func2exec</span> (function <span style="color: #C3C3C3; font-style: italic;">&amp;key</span> (executable (<span style="color: #171717;">if</span> (symbolp function)
+                                                (format nil <span style="color: #9E9E9E;">"~A"</span> function)
+                                                *executable*))
+                             (no-compression nil)
+                             (result <span style="color: #0E0E0E;">:none</span>)
+                             (default-parse-hint *default-parse-hint*)
+                             parse-hint
+                             flag-nicknames
+                             external
+                             depends-on
+                             loads)
+  <span style="color: #616161;">"Turn lisp `</span><span style="color: #252525;">function</span><span style="color: #616161;">' into `</span><span style="color: #252525;">executable</span><span style="color: #616161;">'.</span>
+<span style="color: #616161;">Return the path to executable.</span>
+
+<span style="color: #616161;">Parameters:</span>
+<span style="color: #616161;">+ `</span><span style="color: #252525;">function</span><span style="color: #616161;">': a symbol for function or function itself</span>
+<span style="color: #616161;">+ `</span><span style="color: #252525;">executable</span><span style="color: #616161;">': name to output executale file</span>
+<span style="color: #616161;">+ `</span><span style="color: #252525;">compression</span><span style="color: #616161;">': non `</span><span style="color: #252525;">nil</span><span style="color: #616161;">' to compress the output executable (SBCL)</span>
+<span style="color: #616161;">+ `</span><span style="color: #252525;">documentation</span><span style="color: #616161;">': documentation string of `</span><span style="color: #252525;">function</span><span style="color: #616161;">'</span>
+
+<span style="color: #616161;">  if not provided, the documentation will be evaluated by</span>
+<span style="color: #616161;">  `</span><span style="color: #252525;">function-docstring</span><span style="color: #616161;">'.</span>
+<span style="color: #616161;">+ `</span><span style="color: #252525;">result</span><span style="color: #616161;">': how to output (serialize) function return values</span>
+
+<span style="color: #616161;">  the `</span><span style="color: #252525;">result</span><span style="color: #616161;">' could be:</span>
+<span style="color: #616161;">  + `</span><span style="color: #252525;">:none</span><span style="color: #616161;">'   for not output result</span>
+<span style="color: #616161;">  + `</span><span style="color: #252525;">:plain</span><span style="color: #616161;">'  just print the result</span>
+<span style="color: #616161;">  + `</span><span style="color: #252525;">:pretty</span><span style="color: #616161;">' pretty print the result</span>
+<span style="color: #616161;">+ `</span><span style="color: #252525;">parse-hint</span><span style="color: #616161;">': an alist</span>
+<span style="color: #616161;">+ `</span><span style="color: #252525;">flag-nicknames</span><span style="color: #616161;">': an alist</span>
+<span style="color: #616161;">+ `</span><span style="color: #252525;">external</span><span style="color: #616161;">': non-nil for using external SBCL to build executable</span>
+<span style="color: #616161;">+ `</span><span style="color: #252525;">depends-on</span><span style="color: #616161;">': system dependence</span>
+<span style="color: #616161;">+ `</span><span style="color: #252525;">loads</span><span style="color: #616161;">': loading scripts</span>
+<span style="color: #616161;">"</span>
+  (<span style="color: #171717;">declare</span> (type (or symbol function) function))
+  (<span style="color: #171717;">let</span> ((*default-parse-hint* default-parse-hint))
+    (<span style="color: #171717;">if</span> external
+        (func2exec-external executable function
+                            <span style="color: #0E0E0E;">:parse-hint</span> parse-hint
+                            <span style="color: #0E0E0E;">:flag-nicknames</span> flag-nicknames
+                            <span style="color: #0E0E0E;">:compression</span>    (not no-compression)
+                            <span style="color: #0E0E0E;">:result</span>         (or result <span style="color: #0E0E0E;">:none</span>)
+                            <span style="color: #0E0E0E;">:depends-on</span>     depends-on
+                            <span style="color: #0E0E0E;">:loads</span>          loads)
+        (func2exec-here executable function
+                        <span style="color: #0E0E0E;">:parse-hint</span>     parse-hint
+                        <span style="color: #0E0E0E;">:flag-nicknames</span> flag-nicknames
+                        <span style="color: #0E0E0E;">:compression</span>    (not no-compression)
+                        <span style="color: #0E0E0E;">:result</span>         (or result <span style="color: #0E0E0E;">:none</span>)))))
+</pre>
+</div>
+</div>
+</li>
+<li><a id="org1fd8ca0"></a><code>(f2e function ...)</code> &hArr; <code>func2exec</code><br />
+<div class="outline-text-5" id="text-2-2-4-4">
+<p>
+<code>f2e</code> is the alias of <code>func2exec</code>.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp" id="org8a6bb42">(setf (fdefinition 'f2e) #'func2exec)
+</pre>
+</div>
+</div>
+</li>
+</ol>
+</div>
+</div>
+</div>
+<div id="outline-container-orgdb2ac58" class="outline-2">
+<h2 id="orgdb2ac58"><span class="section-number-2">3.</span> [Test] The Stand Alone <code>f2e</code> executable</h2>
+<div class="outline-text-2" id="text-3">
+<div class="org-src-container">
+<pre class="src src-lisp" id="orgc4a4e06">(f2e 'f2e <span style="color: #0E0E0E;">:parse-hint</span> '((executable     . <span style="color: #0E0E0E;">:plain</span>)
+                        (no-compression . <span style="color: #0E0E0E;">:flag</span>)
+                        (external       . <span style="color: #0E0E0E;">:flag</span>))
+          <span style="color: #DADADA;">;; </span><span style="color: #616161;">:default-parse-hint :read</span>
+          <span style="color: #DADADA;">;; </span><span style="color: #616161;">:executable  "f2e"</span>
+          <span style="color: #0E0E0E;">:external</span>    t)
+</pre>
+</div>
+
+<pre class="example" id="org62a9e45">
+This is SBCL 2.5.4, an implementation of ANSI Common Lisp.
+More information about SBCL is available at &lt;http://www.sbcl.org/&gt;.
+
+SBCL is free software, provided as is, with absolutely no warranty.
+It is mostly in the public domain; some portions are provided under
+BSD-style licenses.  See the CREDITS and COPYING files in the
+distribution for more information.
+To load "func2exec":
+  Load 1 ASDF system:
+    func2exec
+; Loading "func2exec"
+
+[undoing binding stack and other enclosing state... done]
+[performing final GC... done]
+[saving current Lisp image into f2e:
+writing 2368 bytes from the static space at 0x300200000
+compressed 65536 bytes into 650 at level 9
+writing 0 bytes from the fixedobj space at 0x302300000
+compressed 0 bytes into 9 at level 9
+writing 40304640 bytes from the dynamic space at 0x7003000000
+compressed 40304640 bytes into 10535624 at level 9
+writing 3744 bytes from the read-only space at 0x300000000
+compressed 65536 bytes into 1375 at level 9
+writing 0 bytes from the text space at 0x0
+compressed 0 bytes into 9 at level 9
+done]
+</pre>
+</div>
+</div>
+<div id="outline-container-orgbe27cf2" class="outline-2">
+<h2 id="orgbe27cf2"><span class="section-number-2">4.</span> License</h2>
+<div class="outline-text-2" id="text-4">
+<pre class="example" id="orgf1f33ab">
+this package is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published
+by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version.
+
+this package is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this package. If not, see &lt;https://www.gnu.org/licenses/&gt;.
+</pre>
+</div>
+</div>
+</div>
+<div id="postamble" class="status">
+<p class="author">Author: 凉凉</p>
+<p class="date">Created: 2025-06-05 Thu 07:39</p>
+<p class="validation"><a href="https://validator.w3.org/check?uri=referer">Validate</a></p>
+</div>
+</body>
+</html>
