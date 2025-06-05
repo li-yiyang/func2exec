@@ -381,9 +381,9 @@ With =parse-hint= for normal arguments:
 
 #+RESULTS: parse-lambda-list.test.with-parse-hint
 #+begin_src lisp :tangle no :eval no
-(parse-lambda-list (function-lambda-list #'parse-lambda-list)
-                   '((lambda-list . :plain)))
-;; => ((:lambda-list . :plain)), ((:parse-hint . :read)), nil, nil, nil
+  (parse-lambda-list (function-lambda-list #'parse-lambda-list)
+                     '((lambda-list . :plain)))
+  ;; => ((:lambda-list . :plain)), ((:parse-hint . :read)), nil, nil, nil
 #+end_src
 
 With =parse-hint= for key arguments:
@@ -598,10 +598,10 @@ The =:stdin*= should read =*standard-input*= as string and use it.
                      &key parse-hint flag-nicknames
                        (default-parse-hint *default-parse-hint*))
     "Parse ARGV and return the calling form. "
-    (multiple-value-bind (normal optional keys rest-p other-key-p)
-        (parse-lambda-list lambda-list parse-hint)
-      (let ((*default-parse-hint* default-parse-hint)
-            (flag-nicknames       (append flag-nicknames *flag-nicknames*)))
+    (let ((*default-parse-hint* default-parse-hint)
+          (flag-nicknames       (append flag-nicknames *flag-nicknames*)))
+      (multiple-value-bind (normal optional keys rest-p other-key-p)
+          (parse-lambda-list lambda-list parse-hint)
         (loop with key*    = ()
               with normal* = ()
               with help?   = nil
@@ -653,6 +653,17 @@ The =:stdin*= should read =*standard-input*= as string and use it.
 #+begin_src lisp :tangle no :eval no
 (parse-argv '(x y) '("x" "y") :parse-hint '((y . :plain)))
 ;; => (x "y")
+#+end_src
+
+***** Default parse hint
+#+name: parse-argv.test.default-parse-hint
+#+call: test[:results replace](e='(parse-argv '(output &rest files) '("foo.js" "foo.lisp") :default-parse-hint :plain))
+
+#+RESULTS: parse-argv.test.default-parse-hint
+#+begin_src lisp :tangle no :eval no
+(parse-argv '(output &rest files) '("foo.js" "foo.lisp")
+            :default-parse-hint :plain)
+;; => ("foo.js" "foo.lisp")
 #+end_src
 
 ***** Help flag
@@ -748,7 +759,12 @@ Call =save-lisp-and-die= in local SBCL image:
 #+name: func2exec-here
 #+begin_src lisp
   (defun func2exec-here (executable function
-                         &key parse-hint flag-nicknames compression result)
+                         &key
+                           (default-parse-hint *default-parse-hint*)
+                           parse-hint
+                           flag-nicknames
+                           compression
+                           result)
     (let* ((lambda-list (function-lambda-list function))
            (exec        (file-namestring executable))
            (document    (function-docstring function exec
@@ -758,13 +774,18 @@ Call =save-lisp-and-die= in local SBCL image:
                           (:plain  #'print)
                           (:pretty #'pprint)))
            (toplevel    (lambda ()
-                          (let ((args (parse-argv lambda-list
-                                                  (command-line-arguments)
-                                                  :parse-hint     parse-hint
-                                                  :flag-nicknames flag-nicknames)))
-                            (if (find :help args)
-                                (write-string document)
-                                (funcall print-fn (apply function args)))))))
+                          (let ((args (parse-argv
+                                       lambda-list
+                                       (command-line-arguments)
+                                       :default-parse-hint default-parse-hint
+                                       :parse-hint     parse-hint
+                                       :flag-nicknames flag-nicknames)))
+                            (cond ((find :help args)
+                                   (write-string document)
+                                   (format t "~&~%Input: ~%")
+                                   (format t "  ~{~S~^ ~}~%" args))
+                                  (t
+                                   (funcall print-fn (apply function args))))))))
       ,#+sbcl
       (sb-ext:save-lisp-and-die executable
                                 :toplevel             toplevel
@@ -779,8 +800,15 @@ Call =save-lisp-and-die= in external SBCL image:
 #+name: func2exec-external
 #+begin_src lisp
   (defun func2exec-external (executable function
-                             &key parse-hint flag-nicknames compression result
-                               depends-on loads no-evaluate)
+                             &key
+                               (default-parse-hint *default-parse-hint*)
+                               parse-hint
+                               flag-nicknames
+                               compression
+                               result
+                               depends-on
+                               loads
+                               no-evaluate)
     (unless (symbolp function)
       (error "Building externally should provide function as symbol. "))
     (let* ((*print-pretty* nil)
@@ -802,17 +830,20 @@ Call =save-lisp-and-die= in external SBCL image:
                "--eval"
                ,(format nil
                         (concatenate 'string
-                                     "(let ((func2exec:*default-parse-hint* '~S)) "
-                                     "(func2exec::func2exec-here "
-                                     "~S #'~A::~A "
+                                     "(func2exec:f2e #'~A::~A "
+                                     ":executable '~S "
                                      ":parse-hint '~S "
+                                     ":default-parse-hint '~S "
                                      ":flag-nicknames '~S "
-                                     ":compression '~S "
-                                     ":result '~S))")
-                        ,*default-parse-hint* executable
-                        (package-name (symbol-package function))
-                        (symbol-name function)
-                        parse-hint flag-nicknames compression result))))
+                                     ":no-compression '~S "
+                                     ":result '~S)")
+                        (package-name (symbol-package function)) (symbol-name function)
+                        executable
+                        parse-hint
+                        default-parse-hint
+                        flag-nicknames
+                        (not compression)
+                        result))))
       (if no-evaluate
           cmd
           (uiop:run-program cmd :ignore-error-status t
@@ -895,7 +926,8 @@ The given =function= argument should be symbol, otherwise, raise error.
                           :parse-hint     parse-hint
                           :flag-nicknames flag-nicknames
                           :compression    (not no-compression)
-                          :result         (or result :none)))))
+                          :result         (or result :none)))
+      executable))
 #+end_src
 
 **** =(f2e function ...)= \Leftrightarrow =func2exec=
@@ -912,48 +944,157 @@ The given =function= argument should be symbol, otherwise, raise error.
   <<ending(file="func2exec.lisp")>>
 #+end_src
 
-* [Test] The Stand Alone =f2e= executable
-#+name: f2e.test
-#+header: :mkdirp yes :dir (expand-file-name "build/")
-#+header: :package func2exec :results output :exports both
+* Examples of =f2e= Usage
+** [Example 1] JSCL Compiler
+So I was using [[https://github.com/jscl-project/jscl][JSCL]] to compile some of my scripts to JavaScripts and
+deploy them as little toy for the web.
+
+Assuming that the script is like below:
+
+#+name: jscl-builder
+#+header: :tangle build/jscl-builder.lisp
 #+begin_src lisp
-  (f2e 'f2e :parse-hint '((executable     . :plain)
-                          (no-compression . :flag)
-                          (external       . :flag))
-            ;; :default-parse-hint :read
-            ;; :executable  "f2e"
-            :external    t)
+  (in-package :func2exec)
+
+  (jscl:bootstrap)
+
+  (defun jscl-build (output &rest files)
+    "Build Lisp scripts `files' as `output'.
+
+  Parameters:
+  + `output': the output JS files
+  + `files':  the Lisp files
+
+  Note:
+  due to the JSCL feature, all the files should be placed
+  within a same directory.
+
+  Example:
+
+      (jscl-build \"foo.js\" \"foo1.lisp\" \"foo2.lisp\")
+  "
+    (jscl:compile-application files output))
 #+end_src
 
-#+RESULTS: f2e.test
+Thus to build a =jscl-builder= executable:
+
+#+name: jscl-builder.f2e.lisp
+#+header: :dir (expand-file-name "./build/")
+#+begin_src lisp
+  (func2exec:f2e 'jscl-build
+                 :external t
+                 :default-parse-hint :plain
+                 :loads '("~/quicklisp/local-projects/jscl/jscl.lisp"
+                          "jscl-builder.lisp"))
+#+end_src
+
+#+RESULTS: jscl-builder.f2e.lisp
+
+*Test*:
+
+*** Help Flag
+Print help message with =--help= flag:
+
+#+name: jscl-builder.test
+#+header: :dir build
+#+header: :results output
+#+begin_src sh
+  ./jscl-build --help
+#+end_src
+
+#+RESULTS: jscl-builder.test
 #+begin_example
-This is SBCL 2.5.4, an implementation of ANSI Common Lisp.
-More information about SBCL is available at <http://www.sbcl.org/>.
+jscl-build output ...
 
-SBCL is free software, provided as is, with absolutely no warranty.
-It is mostly in the public domain; some portions are provided under
-BSD-style licenses.  See the CREDITS and COPYING files in the
-distribution for more information.
-To load "func2exec":
-  Load 1 ASDF system:
-    func2exec
-; Loading "func2exec"
+  output   [PLAIN]
 
-[undoing binding stack and other enclosing state... done]
-[performing final GC... done]
-[saving current Lisp image into f2e:
-writing 2368 bytes from the static space at 0x300200000
-compressed 65536 bytes into 650 at level 9
-writing 0 bytes from the fixedobj space at 0x302300000
-compressed 0 bytes into 9 at level 9
-writing 40304640 bytes from the dynamic space at 0x7003000000
-compressed 40304640 bytes into 10535621 at level 9
-writing 3744 bytes from the read-only space at 0x300000000
-compressed 65536 bytes into 1375 at level 9
-writing 0 bytes from the text space at 0x0
-compressed 0 bytes into 9 at level 9
-done]
+Build Lisp scripts `files' as `output'.
+
+Parameters:
++ `output': the output JS files
++ `files':  the Lisp files
+
+Note:
+due to the JSCL feature, all the files should be placed
+within a same directory.
+
+Example:
+
+    (jscl-build "foo.js" "foo1.lisp" "foo2.lisp")
+
+Input:
+  :help t
 #+end_example
+
+The =--help= flag will print the parsed input for debug usage:
+
+#+name: jscl-builder.test.help
+#+header: :dir build
+#+header: :results output
+#+begin_src sh
+  ./jscl-build --help foo.js foo.lisp
+#+end_src
+
+#+RESULTS: jscl-builder.test.help
+#+begin_example
+jscl-build output ...
+
+  output   [PLAIN]
+
+Build Lisp scripts `files' as `output'.
+
+Parameters:
++ `output': the output JS files
++ `files':  the Lisp files
+
+Note:
+due to the JSCL feature, all the files should be placed
+within a same directory.
+
+Example:
+
+    (jscl-build "foo.js" "foo1.lisp" "foo2.lisp")
+
+Input:
+  "foo.js" "foo.lisp" :help t
+#+end_example
+
+*** Here it goes
+Assuming having the lisp script to be compiled by JSCL compiler:
+
+#+name: jscl.foo.lisp
+#+header: :tangle build/foo.lisp
+#+begin_src lisp
+  (defun sum (&rest args) (reduce #'+ args))
+#+end_src
+
+Then using the built =jscl-build= executable:
+
+#+name: jscl-builder.test.build
+#+header: :dir build
+#+header: :results verbatim
+#+begin_src sh
+  ./jscl-build foo.js foo.lisp && head foo.js
+#+end_src
+
+#+RESULTS: jscl-builder.test.build
+#+begin_example
+Compiling foo.lisp...
+(function(jscl){
+'use strict';
+(function(values, internals){
+var l1=internals.intern('SUM','COMMON-LISP-USER');
+var l2=internals.intern('NIL','COMMON-LISP');
+var l3=internals.intern('+','COMMON-LISP');
+var l4=internals.intern('REDUCE','COMMON-LISP');
+l1.fvalue=(function(){var FUNC=(function JSCL_USER_SUM(values){var v1=l2.value;
+var I;
+for (I=arguments.length-1-1;I>=0;I--)v1=new internals.Cons(arguments[I+1],v1);
+#+end_example
+
+Lucky, :).
+
+
 
 * License
 #+name: license

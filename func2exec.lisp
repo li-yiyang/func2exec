@@ -7,7 +7,7 @@
 ;; Copyright (c) 2025, 凉凉, all rights reserved
 ;; Created: 2025-06-04 03:41
 ;; Version: 0.1
-;; Last-Updated: 2025-06-05 07:39
+;; Last-Updated: 2025-06-05 16:52
 ;;           By: 凉凉
 ;; URL: https://li-yiyang.github.io
 ;; Keywords: Image dump
@@ -224,10 +224,10 @@ Parameters:
                    &key parse-hint flag-nicknames
                      (default-parse-hint *default-parse-hint*))
   "Parse ARGV and return the calling form. "
-  (multiple-value-bind (normal optional keys rest-p other-key-p)
-      (parse-lambda-list lambda-list parse-hint)
-    (let ((*default-parse-hint* default-parse-hint)
-          (flag-nicknames       (append flag-nicknames *flag-nicknames*)))
+  (let ((*default-parse-hint* default-parse-hint)
+        (flag-nicknames       (append flag-nicknames *flag-nicknames*)))
+    (multiple-value-bind (normal optional keys rest-p other-key-p)
+        (parse-lambda-list lambda-list parse-hint)
       (loop with key*    = ()
             with normal* = ()
             with help?   = nil
@@ -267,7 +267,12 @@ Parameters:
                       (return (values (nconc (nreverse normal*) key*))))))))
 
 (defun func2exec-here (executable function
-                       &key parse-hint flag-nicknames compression result)
+                       &key
+                         (default-parse-hint *default-parse-hint*)
+                         parse-hint
+                         flag-nicknames
+                         compression
+                         result)
   (let* ((lambda-list (function-lambda-list function))
          (exec        (file-namestring executable))
          (document    (function-docstring function exec
@@ -277,13 +282,18 @@ Parameters:
                         (:plain  #'print)
                         (:pretty #'pprint)))
          (toplevel    (lambda ()
-                        (let ((args (parse-argv lambda-list
-                                                (command-line-arguments)
-                                                :parse-hint     parse-hint
-                                                :flag-nicknames flag-nicknames)))
-                          (if (find :help args)
-                              (write-string document)
-                              (funcall print-fn (apply function args)))))))
+                        (let ((args (parse-argv
+                                     lambda-list
+                                     (command-line-arguments)
+                                     :default-parse-hint default-parse-hint
+                                     :parse-hint     parse-hint
+                                     :flag-nicknames flag-nicknames)))
+                          (cond ((find :help args)
+                                 (write-string document)
+                                 (format t "~&~%Input: ~%")
+                                 (format t "  ~{~S~^ ~}~%" args))
+                                (t
+                                 (funcall print-fn (apply function args))))))))
     #+sbcl
     (sb-ext:save-lisp-and-die executable
                               :toplevel             toplevel
@@ -292,8 +302,15 @@ Parameters:
                               :save-runtime-options t)))
 
 (defun func2exec-external (executable function
-                           &key parse-hint flag-nicknames compression result
-                             depends-on loads no-evaluate)
+                           &key
+                             (default-parse-hint *default-parse-hint*)
+                             parse-hint
+                             flag-nicknames
+                             compression
+                             result
+                             depends-on
+                             loads
+                             no-evaluate)
   (unless (symbolp function)
     (error "Building externally should provide function as symbol. "))
   (let* ((*print-pretty* nil)
@@ -315,17 +332,20 @@ Parameters:
              "--eval"
              ,(format nil
                       (concatenate 'string
-                                   "(let ((func2exec:*default-parse-hint* '~S)) "
-                                   "(func2exec::func2exec-here "
-                                   "~S #'~A::~A "
+                                   "(func2exec:f2e #'~A::~A "
+                                   ":executable '~S "
                                    ":parse-hint '~S "
+                                   ":default-parse-hint '~S "
                                    ":flag-nicknames '~S "
-                                   ":compression '~S "
-                                   ":result '~S))")
-                      *default-parse-hint* executable
-                      (package-name (symbol-package function))
-                      (symbol-name function)
-                      parse-hint flag-nicknames compression result))))
+                                   ":no-compression '~S "
+                                   ":result '~S)")
+                      (package-name (symbol-package function)) (symbol-name function)
+                      executable
+                      parse-hint
+                      default-parse-hint
+                      flag-nicknames
+                      (not compression)
+                      result))))
     (if no-evaluate
         cmd
         (uiop:run-program cmd :ignore-error-status t
@@ -380,7 +400,8 @@ Parameters:
                         :parse-hint     parse-hint
                         :flag-nicknames flag-nicknames
                         :compression    (not no-compression)
-                        :result         (or result :none)))))
+                        :result         (or result :none)))
+    executable))
 
 (setf (fdefinition 'f2e) #'func2exec)
 
