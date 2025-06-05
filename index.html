@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2025-06-05 Thu 07:39 -->
+<!-- 2025-06-05 Thu 16:57 -->
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>[func2exec]: Turn your lisp function to executable</title>
@@ -201,37 +201,46 @@
 <h2>Table of Contents</h2>
 <div id="text-table-of-contents" role="doc-toc">
 <ul>
-<li><a href="#orga17f658">1. About</a>
+<li><a href="#org31af68d">1. About</a>
 <ul>
-<li><a href="#org3b5c18c">1.1. Usage</a>
+<li><a href="#orgf11f0ec">1.1. Usage</a>
 <ul>
-<li><a href="#org0312db2">1.1.1. Basic executable arguments</a></li>
-<li><a href="#org2f92675">1.1.2. Argument parsing rules</a></li>
-<li><a href="#orgfb2fa6c">1.1.3. Build using external SBCL process (experimental)</a></li>
+<li><a href="#orgb81f3c2">1.1.1. Basic executable arguments</a></li>
+<li><a href="#orgde2b0e8">1.1.2. Argument parsing rules</a></li>
+<li><a href="#org27b434a">1.1.3. Build using external SBCL process (experimental)</a></li>
 </ul>
 </li>
 </ul>
 </li>
-<li><a href="#org95facd7">2. Implementation</a>
+<li><a href="#org01074e0">2. Implementation</a>
 <ul>
-<li><a href="#org4dc1fa6">2.1. ASDF</a></li>
-<li><a href="#org87e7e19">2.2. Package</a>
+<li><a href="#org4e8cc28">2.1. ASDF</a></li>
+<li><a href="#orgeb58049">2.2. Package</a>
 <ul>
-<li><a href="#org6af9c91">2.2.1. Configure</a></li>
-<li><a href="#orgf71330c">2.2.2. Utils</a></li>
-<li><a href="#org3d8b7da">2.2.3. ARGV &rarr; Function calling arguments: <code>parse-argv</code></a></li>
-<li><a href="#orgdce3654">2.2.4. Function &rarr; Executable: <code>func2exec</code></a></li>
+<li><a href="#org7232925">2.2.1. Configure</a></li>
+<li><a href="#org41e174e">2.2.2. Utils</a></li>
+<li><a href="#org82dd3c8">2.2.3. ARGV &rarr; Function calling arguments: <code>parse-argv</code></a></li>
+<li><a href="#org2728056">2.2.4. Function &rarr; Executable: <code>func2exec</code></a></li>
 </ul>
 </li>
 </ul>
 </li>
-<li><a href="#orgdb2ac58">3. [Test] The Stand Alone <code>f2e</code> executable</a></li>
-<li><a href="#orgbe27cf2">4. License</a></li>
+<li><a href="#org50ed389">3. Examples of <code>f2e</code> Usage</a>
+<ul>
+<li><a href="#org49005e1">3.1. [Example 1] JSCL Compiler</a>
+<ul>
+<li><a href="#orgd8d0419">3.1.1. Help Flag</a></li>
+<li><a href="#orgd8046c4">3.1.2. Here it goes</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#org4030797">4. License</a></li>
 </ul>
 </div>
 </div>
-<div id="outline-container-orga17f658" class="outline-2">
-<h2 id="orga17f658"><span class="section-number-2">1.</span> About</h2>
+<div id="outline-container-org31af68d" class="outline-2">
+<h2 id="org31af68d"><span class="section-number-2">1.</span> About</h2>
 <div class="outline-text-2" id="text-1">
 <p>
 So there's a lot of command line arguments parsing libraries for
@@ -244,7 +253,7 @@ So you may give this project (func2exec) a try:
 </p>
 
 <div class="org-src-container">
-<pre class="src src-lisp" id="org4adf494">(func2exec:f2e 'a-function-you-want-to-call)
+<pre class="src src-lisp" id="org497db7b">(func2exec:f2e 'a-function-you-want-to-call)
 </pre>
 </div>
 
@@ -257,19 +266,19 @@ executable (named as <code>a-function-you-want-to-call</code> by default).
 <b>Note</b>: Only support SBCL now.
 </p>
 </div>
-<div id="outline-container-org3b5c18c" class="outline-3">
-<h3 id="org3b5c18c"><span class="section-number-3">1.1.</span> Usage</h3>
+<div id="outline-container-orgf11f0ec" class="outline-3">
+<h3 id="orgf11f0ec"><span class="section-number-3">1.1.</span> Usage</h3>
 <div class="outline-text-3" id="text-1-1">
 <div class="org-src-container">
-<pre class="src src-lisp" id="orgdddc97a">(func2exec:f2e function
+<pre class="src src-lisp" id="org9c13b0e">(func2exec:f2e function
                <span style="color: #C3C3C3; font-style: italic;">&amp;key</span> executable compression documentation
                parse-hint flag-nicknames
                external depends-on loads)
 </pre>
 </div>
 </div>
-<div id="outline-container-org0312db2" class="outline-4">
-<h4 id="org0312db2"><span class="section-number-4">1.1.1.</span> Basic executable arguments</h4>
+<div id="outline-container-orgb81f3c2" class="outline-4">
+<h4 id="orgb81f3c2"><span class="section-number-4">1.1.1.</span> Basic executable arguments</h4>
 <div class="outline-text-4" id="text-1-1-1">
 <ul class="org-ul">
 <li><code>executable</code>: path to output executable file</li>
@@ -280,13 +289,13 @@ executable (named as <code>a-function-you-want-to-call</code> by default).
 
 <p>
 if not provided, the documentation will be evaluated by
-<a href="#orgd032937"><code>func2exec::function-docstring</code></a>.
+<a href="#org10a9d4b"><code>func2exec::function-docstring</code></a>.
 </p></li>
 </ul>
 </div>
 </div>
-<div id="outline-container-org2f92675" class="outline-4">
-<h4 id="org2f92675"><span class="section-number-4">1.1.2.</span> Argument parsing rules</h4>
+<div id="outline-container-orgde2b0e8" class="outline-4">
+<h4 id="orgde2b0e8"><span class="section-number-4">1.1.2.</span> Argument parsing rules</h4>
 <div class="outline-text-4" id="text-1-1-2">
 <ul class="org-ul">
 <li><p>
@@ -299,7 +308,7 @@ The alist element should be like <code>(var . type)</code>:
 <ul class="org-ul">
 <li><code>var</code>: should be the variable name lambda list</li>
 <li><p>
-<code>type</code>: should be one of: <a id="orgc1cac27"></a>
+<code>type</code>: should be one of: <a id="org7a341b5"></a>
 </p>
 
 <ul class="org-ul">
@@ -356,7 +365,7 @@ func        <span style="color: #DADADA;"># </span><span style="color: #616161;"
 </ul>
 
 <p>
-See <a href="#orgd74d462"><code>func2exec::read-arg</code></a> for reading type implementation.
+See <a href="#orgcebb940"><code>func2exec::read-arg</code></a> for reading type implementation.
 </p>
 
 <p>
@@ -365,14 +374,14 @@ See for default parse type hint.
 </ul>
 
 <p>
-See <a href="#orgdd10343"><code>func2exec:parse-argv</code></a>.
+See <a href="#org78510d6"><code>func2exec:parse-argv</code></a>.
 </p></li>
 <li><code>flag-nicknames</code>: an alist of function flag nicknames</li>
 </ul>
 </div>
 </div>
-<div id="outline-container-orgfb2fa6c" class="outline-4">
-<h4 id="orgfb2fa6c"><span class="section-number-4">1.1.3.</span> Build using external SBCL process (experimental)</h4>
+<div id="outline-container-org27b434a" class="outline-4">
+<h4 id="org27b434a"><span class="section-number-4">1.1.3.</span> Build using external SBCL process (experimental)</h4>
 <div class="outline-text-4" id="text-1-1-3">
 <ul class="org-ul">
 <li><code>external</code>: non <code>nil</code> means to build executable using external SBCL process
@@ -391,15 +400,15 @@ So this will ensure that script will have correct relative path.
 </div>
 </div>
 </div>
-<div id="outline-container-org95facd7" class="outline-2">
-<h2 id="org95facd7"><span class="section-number-2">2.</span> Implementation</h2>
+<div id="outline-container-org01074e0" class="outline-2">
+<h2 id="org01074e0"><span class="section-number-2">2.</span> Implementation</h2>
 <div class="outline-text-2" id="text-2">
 </div>
-<div id="outline-container-org4dc1fa6" class="outline-3">
-<h3 id="org4dc1fa6"><span class="section-number-3">2.1.</span> ASDF</h3>
+<div id="outline-container-org4e8cc28" class="outline-3">
+<h3 id="org4e8cc28"><span class="section-number-3">2.1.</span> ASDF</h3>
 <div class="outline-text-3" id="text-2-1">
 <div class="org-src-container">
-<pre class="src src-lisp" id="orgbac3a01">(asdf:defsystem <span style="color: #0E0E0E;">#:func2exec</span>
+<pre class="src src-lisp" id="orgd042b84">(asdf:defsystem <span style="color: #0E0E0E;">#:func2exec</span>
   <span style="color: #0E0E0E;">:author</span> (<span style="color: #9E9E9E;">"&#20937;&#20937;"</span>)
   <span style="color: #0E0E0E;">:version</span> <span style="color: #9E9E9E;">"0.1"</span>
   <span style="color: #0E0E0E;">:description</span> <span style="color: #9E9E9E;">"Turn function to executable. "</span>
@@ -411,11 +420,11 @@ So this will ensure that script will have correct relative path.
 </div>
 </div>
 </div>
-<div id="outline-container-org87e7e19" class="outline-3">
-<h3 id="org87e7e19"><span class="section-number-3">2.2.</span> Package</h3>
+<div id="outline-container-orgeb58049" class="outline-3">
+<h3 id="orgeb58049"><span class="section-number-3">2.2.</span> Package</h3>
 <div class="outline-text-3" id="text-2-2">
 <div class="org-src-container">
-<pre class="src src-lisp" id="orgfadb5cc">(<span style="color: #171717;">defpackage</span> <span style="color: #0E0E0E;">#:func2exec</span>
+<pre class="src src-lisp" id="orgdbdc24d">(<span style="color: #171717;">defpackage</span> <span style="color: #0E0E0E;">#:func2exec</span>
   (<span style="color: #0E0E0E;">:use</span> <span style="color: #0E0E0E;">:cl</span>)
   (<span style="color: #0E0E0E;">:export</span>
    <span style="color: #DADADA;">;; </span><span style="color: #616161;">Configure</span>
@@ -434,8 +443,8 @@ So this will ensure that script will have correct relative path.
 </pre>
 </div>
 </div>
-<div id="outline-container-org6af9c91" class="outline-4">
-<h4 id="org6af9c91"><span class="section-number-4">2.2.1.</span> Configure</h4>
+<div id="outline-container-org7232925" class="outline-4">
+<h4 id="org7232925"><span class="section-number-4">2.2.1.</span> Configure</h4>
 <div class="outline-text-4" id="text-2-2-1">
 <p>
 These values are used to configure how to generate the executable:
@@ -447,7 +456,7 @@ These values are used to configure how to generate the executable:
 </p>
 
 <div class="org-src-container">
-<pre class="src src-lisp" id="orgd03e9b2">(<span style="color: #171717;">defparameter</span> <span style="color: #616161;">*executable*</span> <span style="color: #9E9E9E;">"executable"</span>
+<pre class="src src-lisp" id="orgc2933dd">(<span style="color: #171717;">defparameter</span> <span style="color: #616161;">*executable*</span> <span style="color: #9E9E9E;">"executable"</span>
   <span style="color: #616161;">"Default `</span><span style="color: #252525;">func2exec</span><span style="color: #616161;">' executable name fallback. "</span>)
 </pre>
 </div></li>
@@ -457,7 +466,7 @@ These values are used to configure how to generate the executable:
 </p>
 
 <div class="org-src-container">
-<pre class="src src-lisp" id="org700ace0">(<span style="color: #171717;">defparameter</span> <span style="color: #616161;">*dynamic-space-size*</span> nil
+<pre class="src src-lisp" id="org8ceedef">(<span style="color: #171717;">defparameter</span> <span style="color: #616161;">*dynamic-space-size*</span> nil
   <span style="color: #616161;">"Runtime option --dynamic-space-size for external SBCL.</span>
 <span style="color: #616161;">Set to be `</span><span style="color: #252525;">nil</span><span style="color: #616161;">' will use current image runtime option. "</span>)
 </pre>
@@ -468,7 +477,7 @@ These values are used to configure how to generate the executable:
 </p>
 
 <div class="org-src-container">
-<pre class="src src-lisp" id="org90a992b">(<span style="color: #171717;">defparameter</span> <span style="color: #616161;">*control-stack-size*</span> nil
+<pre class="src src-lisp" id="orgcb94c4f">(<span style="color: #171717;">defparameter</span> <span style="color: #616161;">*control-stack-size*</span> nil
   <span style="color: #616161;">"Runtime option --control-stack-size for external SBCL.</span>
 <span style="color: #616161;">Set to be `</span><span style="color: #252525;">nil</span><span style="color: #616161;">' will use current image runtime option. "</span>)
 </pre>
@@ -479,7 +488,7 @@ These values are used to configure how to generate the executable:
 </p>
 
 <div class="org-src-container">
-<pre class="src src-lisp" id="orgcff2122">(<span style="color: #171717;">defparameter</span> <span style="color: #616161;">*flag-nicknames*</span> '((<span style="color: #0E0E0E;">:h</span> . <span style="color: #0E0E0E;">:help</span>))
+<pre class="src src-lisp" id="org6a538e6">(<span style="color: #171717;">defparameter</span> <span style="color: #616161;">*flag-nicknames*</span> '((<span style="color: #0E0E0E;">:h</span> . <span style="color: #0E0E0E;">:help</span>))
   <span style="color: #616161;">"Flag nicknames as fallback. "</span>)
 </pre>
 </div></li>
@@ -489,7 +498,7 @@ These values are used to configure how to generate the executable:
 </p>
 
 <div class="org-src-container">
-<pre class="src src-lisp" id="org6f42ca2">(<span style="color: #171717;">defparameter</span> <span style="color: #616161;">*parse-hint*</span> '((<span style="color: #0E0E0E;">:help</span> . <span style="color: #0E0E0E;">:flag</span>))
+<pre class="src src-lisp" id="org8b205ec">(<span style="color: #171717;">defparameter</span> <span style="color: #616161;">*parse-hint*</span> '((<span style="color: #0E0E0E;">:help</span> . <span style="color: #0E0E0E;">:flag</span>))
   <span style="color: #616161;">"Parse hint fallbacks. "</span>)
 </pre>
 </div></li>
@@ -499,7 +508,7 @@ These values are used to configure how to generate the executable:
 </p>
 
 <div class="org-src-container">
-<pre class="src src-lisp" id="org902dbee">(<span style="color: #171717;">defparameter</span> <span style="color: #616161;">*default-parse-hint*</span> <span style="color: #0E0E0E;">:read</span>
+<pre class="src src-lisp" id="org0437bfa">(<span style="color: #171717;">defparameter</span> <span style="color: #616161;">*default-parse-hint*</span> <span style="color: #0E0E0E;">:read</span>
   <span style="color: #616161;">"Default parse hint type. "</span>)
 </pre>
 </div></li>
@@ -509,25 +518,25 @@ These values are used to configure how to generate the executable:
 </p>
 
 <div class="org-src-container">
-<pre class="src src-lisp" id="org21251fb">(<span style="color: #171717;">defparameter</span> <span style="color: #616161;">*help-flags*</span> '(<span style="color: #0E0E0E;">:help</span>)
+<pre class="src src-lisp" id="org5aea0e7">(<span style="color: #171717;">defparameter</span> <span style="color: #616161;">*help-flags*</span> '(<span style="color: #0E0E0E;">:help</span>)
   <span style="color: #616161;">"A list of keys that will be used to print help message.  "</span>)
 </pre>
 </div></li>
 </ul>
 </div>
 </div>
-<div id="outline-container-orgf71330c" class="outline-4">
-<h4 id="orgf71330c"><span class="section-number-4">2.2.2.</span> Utils</h4>
+<div id="outline-container-org41e174e" class="outline-4">
+<h4 id="org41e174e"><span class="section-number-4">2.2.2.</span> Utils</h4>
 <div class="outline-text-4" id="text-2-2-2">
 <p>
 These utils function
 </p>
 </div>
 <ol class="org-ol">
-<li><a id="orgd8e9faf"></a><code>(function-lambda-list function)</code> &rarr; lambda list of <code>function</code><br />
+<li><a id="org0a599c9"></a><code>(function-lambda-list function)</code> &rarr; lambda list of <code>function</code><br />
 <div class="outline-text-5" id="text-2-2-2-1">
 <div class="org-src-container">
-<pre class="src src-lisp" id="orgbba900d">#+sbcl
+<pre class="src src-lisp" id="org2644bee">#+sbcl
 (<span style="color: #171717;">require</span> <span style="color: #252525;">:sb-introspect</span>)
 
 (<span style="color: #171717;">defun</span> <span style="color: #3C3C3C;">function-lambda-list</span> (function)
@@ -537,10 +546,10 @@ These utils function
 </div>
 </div>
 </li>
-<li><a id="org0ae1101"></a><code>(command-line-arguments)</code> &rarr; a list of command line arguments (ARGV)<br />
+<li><a id="orgf038b41"></a><code>(command-line-arguments)</code> &rarr; a list of command line arguments (ARGV)<br />
 <div class="outline-text-5" id="text-2-2-2-2">
 <div class="org-src-container">
-<pre class="src src-lisp" id="orgddcf3fb">(<span style="color: #171717;">defun</span> <span style="color: #3C3C3C;">command-line-arguments</span> ()
+<pre class="src src-lisp" id="org64b749b">(<span style="color: #171717;">defun</span> <span style="color: #3C3C3C;">command-line-arguments</span> ()
   #+sbcl (rest sb-ext:*posix-argv*))
 </pre>
 </div>
@@ -551,10 +560,10 @@ the name of executable file.
 </p>
 </div>
 </li>
-<li><a id="org04eabf3"></a><code>(lisp-runtime-arguments)</code> &rarr; a list of lisp runtime arguments<br />
+<li><a id="org756d05f"></a><code>(lisp-runtime-arguments)</code> &rarr; a list of lisp runtime arguments<br />
 <div class="outline-text-5" id="text-2-2-2-3">
 <div class="org-src-container">
-<pre class="src src-lisp" id="org8b26534">(<span style="color: #171717;">defun</span> <span style="color: #3C3C3C;">lisp-runtime-arguments</span> ()
+<pre class="src src-lisp" id="org82886a2">(<span style="color: #171717;">defun</span> <span style="color: #3C3C3C;">lisp-runtime-arguments</span> ()
   #+sbcl
   (list <span style="color: #9E9E9E;">"--dynamic-space-size"</span>
         (format nil <span style="color: #9E9E9E;">"~d"</span>
@@ -576,28 +585,28 @@ The runtime arguments should extracted from current Lisp image.
 </p>
 </div>
 </li>
-<li><a id="orgd66f0ea"></a><code>(symbol-&gt;keyword symbol)</code> &rarr; keyword of symbol<br />
+<li><a id="orgc34300e"></a><code>(symbol-&gt;keyword symbol)</code> &rarr; keyword of symbol<br />
 <div class="outline-text-5" id="text-2-2-2-4">
 <div class="org-src-container">
-<pre class="src src-lisp" id="org8c7e834">(<span style="color: #171717;">defun</span> <span style="color: #3C3C3C;">symbol-&gt;keyword</span> (symbol)
+<pre class="src src-lisp" id="orgb42c01b">(<span style="color: #171717;">defun</span> <span style="color: #3C3C3C;">symbol-&gt;keyword</span> (symbol)
   (<span style="color: #171717;">declare</span> (type symbol symbol))
   (intern (symbol-name symbol) <span style="color: #0E0E0E;">:keyword</span>))
 </pre>
 </div>
 </div>
 </li>
-<li><a id="org1d46a07"></a><code>(normalize-parse-hint parse-hint)</code> &rarr; normalized parse hint alist<br />
+<li><a id="org00959fc"></a><code>(normalize-parse-hint parse-hint)</code> &rarr; normalized parse hint alist<br />
 <div class="outline-text-5" id="text-2-2-2-5">
 <p>
 A normailzed <code>parse-hint</code> alist is an alist with elements:
 </p>
 <ul class="org-ul">
 <li><code>var</code>: name as keyword &larr; <code>symbol</code>, <code>keyword</code>, <code>string</code></li>
-<li><code>type</code>: keyword as valid <code>parse-hint</code> <a href="#orgc1cac27">rule</a> ! error if not</li>
+<li><code>type</code>: keyword as valid <code>parse-hint</code> <a href="#org7a341b5">rule</a> ! error if not</li>
 </ul>
 
 <div class="org-src-container">
-<pre class="src src-lisp" id="org53310b2">(<span style="color: #171717;">defun</span> <span style="color: #3C3C3C;">normalize-parse-hint</span> (parse-hint)
+<pre class="src src-lisp" id="org312b914">(<span style="color: #171717;">defun</span> <span style="color: #3C3C3C;">normalize-parse-hint</span> (parse-hint)
   (<span style="color: #171717;">loop</span> for (var* . type) in parse-hint
         for var = (<span style="color: #171717;">etypecase</span> var*
                     (keyword var*)
@@ -619,10 +628,10 @@ A normailzed <code>parse-hint</code> alist is an alist with elements:
 </div>
 </div>
 </li>
-<li><a id="org969f0eb"></a><code>(parse-lambda-list lambda-list parse-hint)</code> &rarr; normal, optional, key, rest-p, other-keys-p<br />
+<li><a id="org84eb599"></a><code>(parse-lambda-list lambda-list parse-hint)</code> &rarr; normal, optional, key, rest-p, other-keys-p<br />
 <div class="outline-text-5" id="text-2-2-2-6">
 <div class="org-src-container">
-<pre class="src src-lisp" id="orgb59bd41">(<span style="color: #171717;">defun</span> <span style="color: #3C3C3C;">parse-lambda-list</span> (lambda-list <span style="color: #C3C3C3; font-style: italic;">&amp;optional</span> parse-hint)
+<pre class="src src-lisp" id="org0fe7c1f">(<span style="color: #171717;">defun</span> <span style="color: #3C3C3C;">parse-lambda-list</span> (lambda-list <span style="color: #C3C3C3; font-style: italic;">&amp;optional</span> parse-hint)
   <span style="color: #616161;">"Parse `</span><span style="color: #252525;">lambda-list</span><span style="color: #616161;">' with `</span><span style="color: #252525;">parse-hint</span><span style="color: #616161;">' annotated.</span>
 <span style="color: #616161;">Return values are normal, optional, key, rest-p, other-keys-p.</span>
 
@@ -683,7 +692,7 @@ A normailzed <code>parse-hint</code> alist is an alist with elements:
 </p>
 </div>
 <ol class="org-ol">
-<li><a id="orgc9f2f5b"></a>Basic<br />
+<li><a id="orgefc3666"></a>Basic<br />
 <div class="outline-text-6" id="text-2-2-2-6-1">
 <div class="org-src-container">
 <pre class="src src-lisp">(parse-lambda-list (function-lambda-list #'parse-lambda-list))
@@ -692,7 +701,7 @@ A normailzed <code>parse-hint</code> alist is an alist with elements:
 </div>
 </div>
 </li>
-<li><a id="org32a2c26"></a>Parse hint<br />
+<li><a id="org6416784"></a>Parse hint<br />
 <div class="outline-text-6" id="text-2-2-2-6-2">
 <p>
 With <code>parse-hint</code> for normal arguments:
@@ -716,7 +725,7 @@ With <code>parse-hint</code> for key arguments:
 </div>
 </div>
 </li>
-<li><a id="orgc01036e"></a>Complex<br />
+<li><a id="org8354342"></a>Complex<br />
 <div class="outline-text-6" id="text-2-2-2-6-3">
 <p>
 With <code>&amp;key</code> and <code>&amp;allow-other-keys</code>:
@@ -741,7 +750,7 @@ Complex lambda list:
 </li>
 </ol>
 </li>
-<li><a id="org88d5df6"></a><code>(function-docstring function exec &amp;optional parse-hint)</code> &rarr; documentation string of <code>function</code><br />
+<li><a id="org0513e89"></a><code>(function-docstring function exec &amp;optional parse-hint)</code> &rarr; documentation string of <code>function</code><br />
 <div class="outline-text-5" id="text-2-2-2-7">
 <p>
 This should generate a docstring for <code>--help</code> key print out.
@@ -753,7 +762,7 @@ This should generate a docstring for <code>--help</code> key print out.
 </ol>
 
 <div class="org-src-container">
-<pre class="src src-lisp" id="orgd032937">(<span style="color: #171717;">defun</span> <span style="color: #3C3C3C;">function-docstring</span> (function exec <span style="color: #C3C3C3; font-style: italic;">&amp;key</span> parse-hint)
+<pre class="src src-lisp" id="org10a9d4b">(<span style="color: #171717;">defun</span> <span style="color: #3C3C3C;">function-docstring</span> (function exec <span style="color: #C3C3C3; font-style: italic;">&amp;key</span> parse-hint)
   <span style="color: #616161;">"Return the documentation string of `</span><span style="color: #252525;">function</span><span style="color: #616161;">'"</span>
   (<span style="color: #171717;">with-output-to-string</span> (*standard-output*)
     (<span style="color: #171717;">multiple-value-bind</span> (normal optional keys rest-p other-key-p)
@@ -799,7 +808,7 @@ This should generate a docstring for <code>--help</code> key print out.
 </p>
 </div>
 </li>
-<li><a id="orgf166c33"></a>Basic<br />
+<li><a id="org3730655"></a>Basic<br />
 <div class="outline-text-5" id="text-2-2-2-8">
 <div class="org-src-container">
 <pre class="src src-lisp">(function-docstring #'function-docstring <span style="color: #9E9E9E;">"function-docstring"</span>)
@@ -828,7 +837,7 @@ Return empty string for function with no docstring:
 </div>
 </div>
 </li>
-<li><a id="orgdfdb9ea"></a>Parsed hint<br />
+<li><a id="org6e77b71"></a>Parsed hint<br />
 <div class="outline-text-5" id="text-2-2-2-9">
 <div class="org-src-container">
 <pre class="src src-lisp">(function-docstring (<span style="color: #171717;">lambda</span> (<span style="color: #C3C3C3; font-style: italic;">&amp;key</span> foo bar) (<span style="color: #171717;">declare</span> (ignore foo bar))) <span style="color: #9E9E9E;">"key"</span>
@@ -843,7 +852,7 @@ Return empty string for function with no docstring:
 </div>
 </div>
 </li>
-<li><a id="orgf56fcbf"></a>Complex<br />
+<li><a id="orgfac53c9"></a>Complex<br />
 <div class="outline-text-5" id="text-2-2-2-10">
 <div class="org-src-container">
 <pre class="src src-lisp">(function-docstring #'parse-argv <span style="color: #9E9E9E;">"complex"</span>
@@ -864,18 +873,18 @@ Return empty string for function with no docstring:
 </li>
 </ol>
 </div>
-<div id="outline-container-org3d8b7da" class="outline-4">
-<h4 id="org3d8b7da"><span class="section-number-4">2.2.3.</span> ARGV &rarr; Function calling arguments: <code>parse-argv</code></h4>
+<div id="outline-container-org82dd3c8" class="outline-4">
+<h4 id="org82dd3c8"><span class="section-number-4">2.2.3.</span> ARGV &rarr; Function calling arguments: <code>parse-argv</code></h4>
 <div class="outline-text-4" id="text-2-2-3">
 <p>
 Parse the <code>(command-line-arguments)</code>.
 </p>
 </div>
 <ol class="org-ol">
-<li><a id="org5dc1c49"></a><code>(key-arg-p arg)</code> &rarr; test if arg is <code>--key</code> like arguments<br />
+<li><a id="org3e255b7"></a><code>(key-arg-p arg)</code> &rarr; test if arg is <code>--key</code> like arguments<br />
 <div class="outline-text-5" id="text-2-2-3-1">
 <div class="org-src-container">
-<pre class="src src-lisp" id="org6427d2e">(<span style="color: #171717;">defun</span> <span style="color: #3C3C3C;">key-arg-p</span> (arg)
+<pre class="src src-lisp" id="org4fca1b3">(<span style="color: #171717;">defun</span> <span style="color: #3C3C3C;">key-arg-p</span> (arg)
   (and (&gt; (length arg) 2)
        (char= (aref arg 0) #\-)
        (char= (aref arg 1) #\-)))
@@ -893,10 +902,10 @@ Parse the <code>(command-line-arguments)</code>.
 </div>
 </div>
 </li>
-<li><a id="org00ae777"></a><code>(read-arg type arg)</code> &rarr; return the argument parsed from <code>type</code><br />
+<li><a id="org198ce4b"></a><code>(read-arg type arg)</code> &rarr; return the argument parsed from <code>type</code><br />
 <div class="outline-text-5" id="text-2-2-3-2">
 <div class="org-src-container">
-<pre class="src src-lisp" id="orgd74d462">(<span style="color: #171717;">defun</span> <span style="color: #3C3C3C;">read-arg</span> (type arg)
+<pre class="src src-lisp" id="orgcebb940">(<span style="color: #171717;">defun</span> <span style="color: #3C3C3C;">read-arg</span> (type arg)
   (<span style="color: #171717;">declare</span> (type (member <span style="color: #0E0E0E;">:stdin</span> <span style="color: #0E0E0E;">:stdin*</span> <span style="color: #0E0E0E;">:read</span> <span style="color: #0E0E0E;">:eval</span> <span style="color: #0E0E0E;">:plain</span> <span style="color: #0E0E0E;">:flag</span>) type))
   (<span style="color: #171717;">ecase</span> type
     (<span style="color: #0E0E0E;">:stdin</span>  *standard-input*)
@@ -927,17 +936,17 @@ The <code>:stdin*</code> should read <code>*standard-input*</code> as string and
 </div>
 </div>
 </li>
-<li><a id="org8072f0f"></a><code>(parse-argv lambda-list argv &amp;key parse-hint flag-nicknames)</code> &rarr; funcall argument list<br />
+<li><a id="org17e38b5"></a><code>(parse-argv lambda-list argv &amp;key parse-hint flag-nicknames)</code> &rarr; funcall argument list<br />
 <div class="outline-text-5" id="text-2-2-3-3">
 <div class="org-src-container">
-<pre class="src src-lisp" id="orgdd10343">(<span style="color: #171717;">defun</span> <span style="color: #3C3C3C;">parse-argv</span> (lambda-list argv
+<pre class="src src-lisp" id="org78510d6">(<span style="color: #171717;">defun</span> <span style="color: #3C3C3C;">parse-argv</span> (lambda-list argv
                    <span style="color: #C3C3C3; font-style: italic;">&amp;key</span> parse-hint flag-nicknames
                      (default-parse-hint *default-parse-hint*))
   <span style="color: #616161;">"Parse ARGV and return the calling form. "</span>
-  (<span style="color: #171717;">multiple-value-bind</span> (normal optional keys rest-p other-key-p)
-      (parse-lambda-list lambda-list parse-hint)
-    (<span style="color: #171717;">let</span> ((*default-parse-hint* default-parse-hint)
-          (flag-nicknames       (append flag-nicknames *flag-nicknames*)))
+  (<span style="color: #171717;">let</span> ((*default-parse-hint* default-parse-hint)
+        (flag-nicknames       (append flag-nicknames *flag-nicknames*)))
+    (<span style="color: #171717;">multiple-value-bind</span> (normal optional keys rest-p other-key-p)
+        (parse-lambda-list lambda-list parse-hint)
       (<span style="color: #171717;">loop</span> with key*    = ()
             with normal* = ()
             with help?   = nil
@@ -987,7 +996,7 @@ The <code>:stdin*</code> should read <code>*standard-input*</code> as string and
 </p>
 </div>
 <ol class="org-ol">
-<li><a id="org67690a7"></a>Basic<br />
+<li><a id="org7f87786"></a>Basic<br />
 <div class="outline-text-6" id="text-2-2-3-3-1">
 <div class="org-src-container">
 <pre class="src src-lisp">(parse-argv '(x y) '(<span style="color: #9E9E9E;">"x"</span> <span style="color: #9E9E9E;">"y"</span>) <span style="color: #0E0E0E;">:parse-hint</span> '((y . <span style="color: #0E0E0E;">:plain</span>)))
@@ -996,8 +1005,18 @@ The <code>:stdin*</code> should read <code>*standard-input*</code> as string and
 </div>
 </div>
 </li>
-<li><a id="orgae68bd5"></a>Help flag<br />
+<li><a id="orgac81eda"></a>Default parse hint<br />
 <div class="outline-text-6" id="text-2-2-3-3-2">
+<div class="org-src-container">
+<pre class="src src-lisp">(parse-argv '(output <span style="color: #C3C3C3; font-style: italic;">&amp;rest</span> files) '(<span style="color: #9E9E9E;">"foo.js"</span> <span style="color: #9E9E9E;">"foo.lisp"</span>)
+            <span style="color: #0E0E0E;">:default-parse-hint</span> <span style="color: #0E0E0E;">:plain</span>)
+<span style="color: #DADADA;">;; </span><span style="color: #616161;">=&gt; ("foo.js" "foo.lisp")</span>
+</pre>
+</div>
+</div>
+</li>
+<li><a id="org38e4fc4"></a>Help flag<br />
+<div class="outline-text-6" id="text-2-2-3-3-3">
 <div class="org-src-container">
 <pre class="src src-lisp">(parse-argv '(x y) '(<span style="color: #9E9E9E;">"--help"</span>))
 <span style="color: #DADADA;">;; </span><span style="color: #616161;">=&gt; (:help t)</span>
@@ -1011,8 +1030,8 @@ The <code>:stdin*</code> should read <code>*standard-input*</code> as string and
 </div>
 </div>
 </li>
-<li><a id="orge03c865"></a>Arguments number test<br />
-<div class="outline-text-6" id="text-2-2-3-3-3">
+<li><a id="org1e649a0"></a>Arguments number test<br />
+<div class="outline-text-6" id="text-2-2-3-3-4">
 <p>
 Will raise error if given too few arguments:
 </p>
@@ -1078,20 +1097,25 @@ Will accept key nicknames:
 </li>
 </ol>
 </div>
-<div id="outline-container-orgdce3654" class="outline-4">
-<h4 id="orgdce3654"><span class="section-number-4">2.2.4.</span> Function &rarr; Executable: <code>func2exec</code></h4>
+<div id="outline-container-org2728056" class="outline-4">
+<h4 id="org2728056"><span class="section-number-4">2.2.4.</span> Function &rarr; Executable: <code>func2exec</code></h4>
 <div class="outline-text-4" id="text-2-2-4">
 </div>
 <ol class="org-ol">
-<li><a id="org5430bf9"></a><code>(func2exec-here executable function ...)</code><br />
+<li><a id="org5c5e82e"></a><code>(func2exec-here executable function ...)</code><br />
 <div class="outline-text-5" id="text-2-2-4-1">
 <p>
 Call <code>save-lisp-and-die</code> in local SBCL image:
 </p>
 
 <div class="org-src-container">
-<pre class="src src-lisp" id="org1411ee8">(<span style="color: #171717;">defun</span> <span style="color: #3C3C3C;">func2exec-here</span> (executable function
-                       <span style="color: #C3C3C3; font-style: italic;">&amp;key</span> parse-hint flag-nicknames compression result)
+<pre class="src src-lisp" id="org3a7dcb8">(<span style="color: #171717;">defun</span> <span style="color: #3C3C3C;">func2exec-here</span> (executable function
+                       <span style="color: #C3C3C3; font-style: italic;">&amp;key</span>
+                         (default-parse-hint *default-parse-hint*)
+                         parse-hint
+                         flag-nicknames
+                         compression
+                         result)
   (<span style="color: #171717;">let*</span> ((lambda-list (function-lambda-list function))
          (exec        (file-namestring executable))
          (document    (function-docstring function exec
@@ -1101,13 +1125,18 @@ Call <code>save-lisp-and-die</code> in local SBCL image:
                         (<span style="color: #0E0E0E;">:plain</span>  #'print)
                         (<span style="color: #0E0E0E;">:pretty</span> #'pprint)))
          (toplevel    (<span style="color: #171717;">lambda</span> ()
-                        (<span style="color: #171717;">let</span> ((args (parse-argv lambda-list
-                                                (command-line-arguments)
-                                                <span style="color: #0E0E0E;">:parse-hint</span>     parse-hint
-                                                <span style="color: #0E0E0E;">:flag-nicknames</span> flag-nicknames)))
-                          (<span style="color: #171717;">if</span> (find <span style="color: #0E0E0E;">:help</span> args)
-                              (write-string document)
-                              (funcall print-fn (apply function args)))))))
+                        (<span style="color: #171717;">let</span> ((args (parse-argv
+                                     lambda-list
+                                     (command-line-arguments)
+                                     <span style="color: #0E0E0E;">:default-parse-hint</span> default-parse-hint
+                                     <span style="color: #0E0E0E;">:parse-hint</span>     parse-hint
+                                     <span style="color: #0E0E0E;">:flag-nicknames</span> flag-nicknames)))
+                          (<span style="color: #171717;">cond</span> ((find <span style="color: #0E0E0E;">:help</span> args)
+                                 (write-string document)
+                                 (format t <span style="color: #9E9E9E;">"~&amp;~%Input: ~%"</span>)
+                                 (format t <span style="color: #9E9E9E;">"  ~{~S~^ ~}~%"</span> args))
+                                (t
+                                 (funcall print-fn (apply function args))))))))
     #+sbcl
     (sb-ext:save-lisp-and-die executable
                               <span style="color: #0E0E0E;">:toplevel</span>             toplevel
@@ -1118,16 +1147,23 @@ Call <code>save-lisp-and-die</code> in local SBCL image:
 </div>
 </div>
 </li>
-<li><a id="orgda0abf8"></a><code>(func2exec-external executable function ...)</code> &rarr; executable<br />
+<li><a id="orgb14075c"></a><code>(func2exec-external executable function ...)</code> &rarr; executable<br />
 <div class="outline-text-5" id="text-2-2-4-2">
 <p>
 Call <code>save-lisp-and-die</code> in external SBCL image:
 </p>
 
 <div class="org-src-container">
-<pre class="src src-lisp" id="org6d8bb67">(<span style="color: #171717;">defun</span> <span style="color: #3C3C3C;">func2exec-external</span> (executable function
-                           <span style="color: #C3C3C3; font-style: italic;">&amp;key</span> parse-hint flag-nicknames compression result
-                             depends-on loads no-evaluate)
+<pre class="src src-lisp" id="orge329aba">(<span style="color: #171717;">defun</span> <span style="color: #3C3C3C;">func2exec-external</span> (executable function
+                           <span style="color: #C3C3C3; font-style: italic;">&amp;key</span>
+                             (default-parse-hint *default-parse-hint*)
+                             parse-hint
+                             flag-nicknames
+                             compression
+                             result
+                             depends-on
+                             loads
+                             no-evaluate)
   (<span style="color: #171717;">unless</span> (symbolp function)
     (<span style="color: #252525; background-color: #DADADA; font-weight: bold;">error</span> <span style="color: #9E9E9E;">"Building externally should provide function as symbol. "</span>))
   (<span style="color: #171717;">let*</span> ((*print-pretty* nil)
@@ -1149,17 +1185,20 @@ Call <code>save-lisp-and-die</code> in external SBCL image:
              <span style="color: #9E9E9E;">"--eval"</span>
              ,(format nil
                       (concatenate 'string
-                                   <span style="color: #9E9E9E;">"(let ((func2exec:*default-parse-hint* '~S)) "</span>
-                                   <span style="color: #9E9E9E;">"(func2exec::func2exec-here "</span>
-                                   <span style="color: #9E9E9E;">"~S #'~A::~A "</span>
+                                   <span style="color: #9E9E9E;">"(func2exec:f2e #'~A::~A "</span>
+                                   <span style="color: #9E9E9E;">":executable '~S "</span>
                                    <span style="color: #9E9E9E;">":parse-hint '~S "</span>
+                                   <span style="color: #9E9E9E;">":default-parse-hint '~S "</span>
                                    <span style="color: #9E9E9E;">":flag-nicknames '~S "</span>
-                                   <span style="color: #9E9E9E;">":compression '~S "</span>
-                                   <span style="color: #9E9E9E;">":result '~S))"</span>)
-                      *default-parse-hint* executable
-                      (package-name (symbol-package function))
-                      (symbol-name function)
-                      parse-hint flag-nicknames compression result))))
+                                   <span style="color: #9E9E9E;">":no-compression '~S "</span>
+                                   <span style="color: #9E9E9E;">":result '~S)"</span>)
+                      (package-name (symbol-package function)) (symbol-name function)
+                      executable
+                      parse-hint
+                      default-parse-hint
+                      flag-nicknames
+                      (not compression)
+                      result))))
     (<span style="color: #171717;">if</span> no-evaluate
         cmd
         (uiop:run-program cmd <span style="color: #0E0E0E;">:ignore-error-status</span> t
@@ -1176,7 +1215,7 @@ Call <code>save-lisp-and-die</code> in external SBCL image:
 <pre class="src src-lisp">(func2exec-external <span style="color: #9E9E9E;">"foo"</span> 'func2exec <span style="color: #0E0E0E;">:no-evaluate</span> t)
 <span style="color: #DADADA;">;; </span><span style="color: #616161;">=&gt; ("sbcl" "--dynamic-space-size" "20480" "--control-stack-size" "12"</span>
 <span style="color: #DADADA;">;;     </span><span style="color: #616161;">"--non-interactive" "--eval" "(ql:quickload :func2exec)" "--eval"</span>
-<span style="color: #DADADA;">;;     </span><span style="color: #616161;">"(let ((func2exec:*default-parse-hint* ':read)) (func2exec::func2exec-here \"foo\" #'FUNC2EXEC::FUNC2EXEC :parse-hint 'nil :flag-nicknames 'nil :compression 'nil :result 'nil))")</span>
+<span style="color: #DADADA;">;;     </span><span style="color: #616161;">"(func2exec:f2e #'FUNC2EXEC::FUNC2EXEC :executable '\"foo\" :parse-hint 'nil :default-parse-hint ':read :flag-nicknames 'nil :no-compression 't :result 'nil)")</span>
 </pre>
 </div>
 
@@ -1191,10 +1230,10 @@ The given <code>function</code> argument should be symbol, otherwise, raise erro
 </div>
 </div>
 </li>
-<li><a id="org1529fd9"></a><code>(func2exec function &amp;key ...)</code><br />
+<li><a id="org18f7bd9"></a><code>(func2exec function &amp;key ...)</code><br />
 <div class="outline-text-5" id="text-2-2-4-3">
 <div class="org-src-container">
-<pre class="src src-lisp" id="org67e79cb">(<span style="color: #171717;">defun</span> <span style="color: #3C3C3C;">func2exec</span> (function <span style="color: #C3C3C3; font-style: italic;">&amp;key</span> (executable (<span style="color: #171717;">if</span> (symbolp function)
+<pre class="src src-lisp" id="org230681e">(<span style="color: #171717;">defun</span> <span style="color: #3C3C3C;">func2exec</span> (function <span style="color: #C3C3C3; font-style: italic;">&amp;key</span> (executable (<span style="color: #171717;">if</span> (symbolp function)
                                                 (format nil <span style="color: #9E9E9E;">"~A"</span> function)
                                                 *executable*))
                              (no-compression nil)
@@ -1242,19 +1281,20 @@ The given <code>function</code> argument should be symbol, otherwise, raise erro
                         <span style="color: #0E0E0E;">:parse-hint</span>     parse-hint
                         <span style="color: #0E0E0E;">:flag-nicknames</span> flag-nicknames
                         <span style="color: #0E0E0E;">:compression</span>    (not no-compression)
-                        <span style="color: #0E0E0E;">:result</span>         (or result <span style="color: #0E0E0E;">:none</span>)))))
+                        <span style="color: #0E0E0E;">:result</span>         (or result <span style="color: #0E0E0E;">:none</span>)))
+    executable))
 </pre>
 </div>
 </div>
 </li>
-<li><a id="org1fd8ca0"></a><code>(f2e function ...)</code> &hArr; <code>func2exec</code><br />
+<li><a id="org2212098"></a><code>(f2e function ...)</code> &hArr; <code>func2exec</code><br />
 <div class="outline-text-5" id="text-2-2-4-4">
 <p>
 <code>f2e</code> is the alias of <code>func2exec</code>.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-lisp" id="org8a6bb42">(setf (fdefinition 'f2e) #'func2exec)
+<pre class="src src-lisp" id="org496fceb">(setf (fdefinition 'f2e) #'func2exec)
 </pre>
 </div>
 </div>
@@ -1263,53 +1303,117 @@ The given <code>function</code> argument should be symbol, otherwise, raise erro
 </div>
 </div>
 </div>
-<div id="outline-container-orgdb2ac58" class="outline-2">
-<h2 id="orgdb2ac58"><span class="section-number-2">3.</span> [Test] The Stand Alone <code>f2e</code> executable</h2>
+<div id="outline-container-org50ed389" class="outline-2">
+<h2 id="org50ed389"><span class="section-number-2">3.</span> Examples of <code>f2e</code> Usage</h2>
 <div class="outline-text-2" id="text-3">
+</div>
+<div id="outline-container-org49005e1" class="outline-3">
+<h3 id="org49005e1"><span class="section-number-3">3.1.</span> [Example 1] JSCL Compiler</h3>
+<div class="outline-text-3" id="text-3-1">
+<p>
+So I was using <a href="https://github.com/jscl-project/jscl">JSCL</a> to compile some of my scripts to JavaScripts and
+deploy them as little toy for the web.
+</p>
+
+<p>
+Assuming that the script is like below:
+</p>
+
 <div class="org-src-container">
-<pre class="src src-lisp" id="orgc4a4e06">(f2e 'f2e <span style="color: #0E0E0E;">:parse-hint</span> '((executable     . <span style="color: #0E0E0E;">:plain</span>)
-                        (no-compression . <span style="color: #0E0E0E;">:flag</span>)
-                        (external       . <span style="color: #0E0E0E;">:flag</span>))
-          <span style="color: #DADADA;">;; </span><span style="color: #616161;">:default-parse-hint :read</span>
-          <span style="color: #DADADA;">;; </span><span style="color: #616161;">:executable  "f2e"</span>
-          <span style="color: #0E0E0E;">:external</span>    t)
+<pre class="src src-lisp" id="org866e1b5">(<span style="color: #171717;">in-package</span> <span style="color: #0E0E0E;">:func2exec</span>)
+
+(jscl:bootstrap)
+
+(<span style="color: #171717;">defun</span> <span style="color: #3C3C3C;">jscl-build</span> (output <span style="color: #C3C3C3; font-style: italic;">&amp;rest</span> files)
+  <span style="color: #616161;">"Build Lisp scripts `</span><span style="color: #252525;">files</span><span style="color: #616161;">' as `</span><span style="color: #252525;">output</span><span style="color: #616161;">'.</span>
+
+<span style="color: #616161;">Parameters:</span>
+<span style="color: #616161;">+ `</span><span style="color: #252525;">output</span><span style="color: #616161;">': the output JS files</span>
+<span style="color: #616161;">+ `</span><span style="color: #252525;">files</span><span style="color: #616161;">':  the Lisp files</span>
+
+<span style="color: #616161;">Note:</span>
+<span style="color: #616161;">due to the JSCL feature, all the files should be placed</span>
+<span style="color: #616161;">within a same directory.</span>
+
+<span style="color: #616161;">Example:</span>
+
+<span style="color: #616161;">    (jscl-build \"foo.js\" \"foo1.lisp\" \"foo2.lisp\")</span>
+<span style="color: #616161;">"</span>
+  (jscl:compile-application files output))
 </pre>
 </div>
 
-<pre class="example" id="org62a9e45">
-This is SBCL 2.5.4, an implementation of ANSI Common Lisp.
-More information about SBCL is available at &lt;http://www.sbcl.org/&gt;.
+<p>
+Thus to build a <code>jscl-builder</code> executable:
+</p>
 
-SBCL is free software, provided as is, with absolutely no warranty.
-It is mostly in the public domain; some portions are provided under
-BSD-style licenses.  See the CREDITS and COPYING files in the
-distribution for more information.
-To load "func2exec":
-  Load 1 ASDF system:
-    func2exec
-; Loading "func2exec"
+<div class="org-src-container">
+<pre class="src src-lisp" id="org94548ef">(func2exec:f2e 'jscl-build
+               <span style="color: #0E0E0E;">:external</span> t
+               <span style="color: #0E0E0E;">:default-parse-hint</span> <span style="color: #0E0E0E;">:plain</span>
+               <span style="color: #0E0E0E;">:loads</span> '(<span style="color: #9E9E9E;">"~/quicklisp/local-projects/jscl/jscl.lisp"</span>
+                        <span style="color: #9E9E9E;">"jscl-builder.lisp"</span>))
+</pre>
+</div>
 
-[undoing binding stack and other enclosing state... done]
-[performing final GC... done]
-[saving current Lisp image into f2e:
-writing 2368 bytes from the static space at 0x300200000
-compressed 65536 bytes into 650 at level 9
-writing 0 bytes from the fixedobj space at 0x302300000
-compressed 0 bytes into 9 at level 9
-writing 40304640 bytes from the dynamic space at 0x7003000000
-compressed 40304640 bytes into 10535624 at level 9
-writing 3744 bytes from the read-only space at 0x300000000
-compressed 65536 bytes into 1375 at level 9
-writing 0 bytes from the text space at 0x0
-compressed 0 bytes into 9 at level 9
-done]
+<p>
+<b>Test</b>:
+</p>
+</div>
+<div id="outline-container-orgd8d0419" class="outline-4">
+<h4 id="orgd8d0419"><span class="section-number-4">3.1.1.</span> Help Flag</h4>
+<div class="outline-text-4" id="text-3-1-1">
+<p>
+Print help message with <code>--help</code> flag:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-sh" id="org423676e">./jscl-build --help
+</pre>
+</div>
+
+<p>
+The <code>--help</code> flag will print the parsed input for debug usage:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-sh" id="org2c49080">./jscl-build --help foo.js foo.lisp
 </pre>
 </div>
 </div>
-<div id="outline-container-orgbe27cf2" class="outline-2">
-<h2 id="orgbe27cf2"><span class="section-number-2">4.</span> License</h2>
+</div>
+<div id="outline-container-orgd8046c4" class="outline-4">
+<h4 id="orgd8046c4"><span class="section-number-4">3.1.2.</span> Here it goes</h4>
+<div class="outline-text-4" id="text-3-1-2">
+<p>
+Assuming having the lisp script to be compiled by JSCL compiler:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp" id="orgd1751cc">(<span style="color: #171717;">defun</span> <span style="color: #3C3C3C;">sum</span> (<span style="color: #C3C3C3; font-style: italic;">&amp;rest</span> args) (reduce #'+ args))
+</pre>
+</div>
+
+<p>
+Then using the built <code>jscl-build</code> executable:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-sh" id="orgb5b8dd8">./jscl-build foo.js foo.lisp &amp;&amp; head foo.js
+</pre>
+</div>
+
+<p>
+Lucky, :).
+</p>
+</div>
+</div>
+</div>
+</div>
+<div id="outline-container-org4030797" class="outline-2">
+<h2 id="org4030797"><span class="section-number-2">4.</span> License</h2>
 <div class="outline-text-2" id="text-4">
-<pre class="example" id="orgf1f33ab">
+<pre class="example" id="org5197b7d">
 this package is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published
 by the Free Software Foundation, either version 3 of the License,
@@ -1328,7 +1432,7 @@ along with this package. If not, see &lt;https://www.gnu.org/licenses/&gt;.
 </div>
 <div id="postamble" class="status">
 <p class="author">Author: 凉凉</p>
-<p class="date">Created: 2025-06-05 Thu 07:39</p>
+<p class="date">Created: 2025-06-05 Thu 16:57</p>
 <p class="validation"><a href="https://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
 </body>
