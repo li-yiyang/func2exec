@@ -2,9 +2,9 @@
 :year:     2025
 :created:  2025-06-04 03:41
 :version:  0.1
-:url:      https://li-yiyang.github.io
+:url:      https://github.com/li-yiyang/func2exec
 :keywords: Image dump
-:compability: SBCL
+:compability: SBCL Only
 :END:
 #+title: [func2exec]: Turn your lisp function to executable
 #+author: 凉凉
@@ -13,7 +13,7 @@ So there's a lot of command line arguments parsing libraries for
 Common Lisp... But what if I just want to make an executable as
 fast as I can?
 
-So you may give this project (func2exec) a try:
+So you may give this project ([[https://github.com/li-yiyang/func2exec][func2exec]]) a try:
 
 #+name: f2e-example
 #+header: :eval no

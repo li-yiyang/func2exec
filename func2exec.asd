@@ -7,9 +7,9 @@
 ;; Copyright (c) 2025, 凉凉, all rights reserved
 ;; Created: 2025-06-04 03:41
 ;; Version: 0.1
-;; Last-Updated: 2025-06-05 16:52
+;; Last-Updated: 2025-06-05 17:10
 ;;           By: 凉凉
-;; URL: https://li-yiyang.github.io
+;; URL: https://github.com/li-yiyang/func2exec
 ;; Keywords: Image dump
 ;; Compatibility: 
 ;; 
